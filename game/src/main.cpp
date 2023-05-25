@@ -1,4 +1,5 @@
 #include "rlImGui.h"
+#include <iostream>
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
@@ -13,9 +14,11 @@ int main(void)
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
     static float accel = 0;
+    static Vector2 vec1 = { playerRec.x, playerRec.y };
+    
     while (!WindowShouldClose())
     {
-        
+        const float dt = GetFrameTime();
        
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -24,15 +27,19 @@ int main(void)
         if (useGUI)
         {
             rlImGuiBegin();
-            static Vector2 vec1 = { rectpos.x, rectpos.y};
+          
 
-        if (ImGui::SliderFloat("Rectangle X", &vec1.x, 0, SCREEN_WIDTH))
+        if (ImGui::SliderFloat("Rectangle X", &(playerRec.x), 0, SCREEN_WIDTH))
         {
-            rectpos.x = vec1.x;
+            //playerRec.x = vec1.x;
         }
-        if (ImGui::SliderFloat("Rectangle Y", &vec1.y, 0, SCREEN_HEIGHT))
+        if (ImGui::SliderFloat("Rectangle Y", &(playerRec.y), 0, SCREEN_HEIGHT))
         {
-            rectpos.y = vec1.y;
+           // playerRec.y = vec1.y;
+        }
+        if (ImGui::Button("Print"))
+        {
+            std::cout << "Velocity" << vel.x << "|" << vel.y << std::endl;
         }
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -20, 20);
             ImGui::SliderFloat("Rectangle Vel Y", &vel.y, -20, 20);
@@ -42,15 +49,20 @@ int main(void)
           //  playerRec.y = vec1.y;
 
         }
-      
-        vel.x += accel;
-        vel.y += accel;
-        rectpos.x += vel.x;
-        rectpos.y += vel.y;
-        DrawRectangle(rectpos.x, rectpos.y, playerRec.width, playerRec.height, RED);
+        
+    
+        playerRec.x += (vel.x * dt) + 0.5f*accel*dt*dt;
+        playerRec.y += (vel.y * dt) + 0.5f * accel * dt * dt;
+        vel.x += accel*dt;
+        vel.y += accel*dt;
+        if (IsKeyDown(KEY_G))
+        {
+            std::cout << "dt " << dt << std::endl;
+        }
+        DrawRectangle(playerRec.x, playerRec.y, playerRec.width, playerRec.height, RED);
         EndDrawing();
     }
-    //test
+
     CloseWindow();
     return 0;
 }
