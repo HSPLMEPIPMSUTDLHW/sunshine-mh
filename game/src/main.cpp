@@ -13,7 +13,7 @@ int main(void)
     Vector2 rectpos = { SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2 };
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
-    static float accel = 0;
+    static Vector2 accel = { 0,0 };
     static Vector2 vec1 = { playerRec.x, playerRec.y };
     
     while (!WindowShouldClose())
@@ -43,7 +43,8 @@ int main(void)
         }
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -20, 20);
             ImGui::SliderFloat("Rectangle Vel Y", &vel.y, -20, 20);
-            ImGui::SliderFloat("Rectangle Accel", &accel, -20, 20);
+            ImGui::SliderFloat("Rectangle Accel X", &accel.x, -20, 20);
+            ImGui::SliderFloat("Rectangle Accel Y", &accel.y, -20, 20);
             rlImGuiEnd();
            // playerRec.x = vec1.x;
           //  playerRec.y = vec1.y;
@@ -51,15 +52,18 @@ int main(void)
         }
         
     
-        playerRec.x += (vel.x * dt) + 0.5f*accel*dt*dt;
-        playerRec.y += (vel.y * dt) + 0.5f * accel * dt * dt;
-        vel.x += accel*dt;
-        vel.y += accel*dt;
+        playerRec.x += (vel.x * dt) + 0.5f * accel.x*dt*dt;
+        playerRec.y += (vel.y * dt) + 0.5f * accel.y * dt * dt;
+        vel.x += accel.x*dt;
+        vel.y += accel.y*dt;
+
         if (IsKeyDown(KEY_G))
         {
             std::cout << "dt " << dt << std::endl;
         }
-        DrawRectangle(playerRec.x, playerRec.y, playerRec.width, playerRec.height, RED);
+        DrawRectangle(playerRec.x, playerRec.y, playerRec.width, playerRec.height, BLUE);
+        DrawLineV({ playerRec.x+25, playerRec.y+25 }, { vel.x + playerRec.x +25 ,vel.y + playerRec.y + 25 }, RED);
+        DrawLineV({ playerRec.x + 25, playerRec.y + 25 }, { accel.x + playerRec.x + 25 ,accel.y + playerRec.y + 25 }, GREEN);
         EndDrawing();
     }
 
