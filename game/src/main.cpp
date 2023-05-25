@@ -24,15 +24,15 @@ int main(void)
         if (useGUI)
         {
             rlImGuiBegin();
-            static Vector2 vec1 = {playerRec.x, playerRec.y};
+            static Vector2 vec1 = { rectpos.x, rectpos.y};
 
         if (ImGui::SliderFloat("Rectangle X", &vec1.x, 0, SCREEN_WIDTH))
         {
-            playerRec.x = vec1.x;
+            rectpos.x = vec1.x;
         }
         if (ImGui::SliderFloat("Rectangle Y", &vec1.y, 0, SCREEN_HEIGHT))
         {
-            playerRec.y = vec1.y;
+            rectpos.y = vec1.y;
         }
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -20, 20);
             ImGui::SliderFloat("Rectangle Vel Y", &vel.y, -20, 20);
@@ -42,14 +42,15 @@ int main(void)
           //  playerRec.y = vec1.y;
 
         }
+      
         vel.x += accel;
         vel.y += accel;
-        playerRec.x += vel.x;
-        playerRec.y += vel.y;
-        DrawRectangle(playerRec.x, playerRec.y, playerRec.width, playerRec.height, RED);
+        rectpos.x += vel.x;
+        rectpos.y += vel.y;
+        DrawRectangle(rectpos.x, rectpos.y, playerRec.width, playerRec.height, RED);
         EndDrawing();
     }
-
+    //test
     CloseWindow();
     return 0;
 }
