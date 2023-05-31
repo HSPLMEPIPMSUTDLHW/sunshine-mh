@@ -287,6 +287,7 @@ RMAPI Vector2 Scale(Vector2 v, float scale)
     return result;
 }
 
+
 // Project v1 onto v2
 RMAPI Vector2 Project(Vector2 v1, Vector2 v2)
 {
