@@ -7,9 +7,87 @@
 class Ridgedbody
 {
 private:
-    Ridgedbody();
+    Vector2 position;
+    Vector2 velocity;
+    Vector2 accel; 
+    Color color;
+    float width, height;
+    float maxSpeed;
+    Rectangle dst;
+public:
+    Ridgedbody(float x, float y, float w, float h, Color c)
+    {
+        color = c;
+        dst = { x,y,w,h};
+        position = { x,y };
+        velocity = { 0,0 };
+        accel = { 0,0 };
+        maxSpeed = 0;
+    }
+
+    void Update()
+    {
+       const float dt = GetFrameTime();
+       position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
+       velocity = velocity + accel* dt;
+        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
+        if (currentspeed > maxSpeed)
+        {
+            velocity = (Scale(velocity, (maxSpeed / currentspeed)));
+        }
+    }
+
+    void setAccel(Vector2 a)
+    {
+        accel = a;
+    }
+    Vector2 getAccel()
+    {
+        return accel;
+    }
+    void setPos(Vector2 v)
+    {
+        position = v;
+    }
+    Vector2 getPos()
+    {
+        return position;
+    }
+    Vector2 getVel()
+    {
+        return velocity;
+    }
+    void setVel(Vector2 v)
+    {
+        velocity = v;
+    }
+    void setMaxSpeed(float m)
+    {
+        maxSpeed = m;
+    }
+    float getHeight()
+    {
+        return height;
+    }
+    float getWidth()
+    {
+        return width;
+    }
+
+
      
 };
+
+Vector2 Seek(const Vector2& agentPos, const Vector2& agnetVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+{
+    Vector2 targetDistance = { targetPos-agentPos };
+    Vector2 toTarget = Normalize(targetDistance);
+    Vector2 desiredVel = toTarget * desiredSpeed;
+    Vector2 deltaVel = desiredVel - agnetVel;
+    Vector2 outputAccel = Normalize(deltaVel) * accel;
+   std::cout << "target " << targetPos.x << "|" << targetPos.y << std::endl;
+    return outputAccel;
+}
 
 Vector2 Normalized(Vector2 vec)
 {
@@ -30,6 +108,10 @@ int main(void)
     Vector2 targetDistance;
     Vector2 tDNormal;
     Color circleColor = RED;
+
+
+    Ridgedbody player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, RED);
+
 
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
@@ -61,7 +143,7 @@ int main(void)
         }
         if (ImGui::Button("Print"))
         {
-            std::cout << "Velocity" << vel.x << "|" << vel.y << std::endl;
+            std::cout << "Velocity" << player.getVel().x << "|" << player.getVel().y << std::endl;
         }
 
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
@@ -74,11 +156,16 @@ int main(void)
                 if (fleeing) flee = -1;
                 else flee = 1;
                 ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
-                targetDistance = { GetMousePosition().x - playerRec.x - 25 ,  GetMousePosition().y - playerRec.y - 25 };
+                Vector2 pOffset = { 25,25 };
+                player.setAccel(Seek(player.getPos(), player.getVel(),  GetMousePosition() -pOffset
+              , maxSpeed, ac));
+                /* 
+                targetDistance = { GetMousePosition().x - player.getPos().x - 25 ,  GetMousePosition().y - player.getPos().y - 25 };
                 Vector2 toTarget = Normalize(targetDistance);
                 Vector2 desiredVel = toTarget * maxSpeed;
-                Vector2 deltaVel = desiredVel - vel;
-                accel = Normalize(deltaVel) * ac;
+                Vector2 deltaVel = desiredVel - player.getVel();
+                player.setAccel(Normalize(deltaVel) * ac)  ;
+                */
               //  float tdhyp = { sqrt(targetDistance.x * targetDistance.x + targetDistance.y * targetDistance.y) };
                 /*
                 tDNormal = Normalize(targetDistance);
@@ -96,6 +183,7 @@ int main(void)
                 */  /*
                accel.x = desiredVel.x * ac * flee;
                accel.y = desiredVel.y * ac * flee;*/
+
             }
             else
             { 
@@ -103,6 +191,7 @@ int main(void)
             ImGui::SliderFloat("Rectangle Accel Y", &accel.y, -50, 50);
             }
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
+            player.setMaxSpeed(maxSpeed);
             if (ImGui::Button("Reset Vel/Accel"))
             {
 
@@ -111,24 +200,27 @@ int main(void)
             }
             if (ImGui::Button("Reset Position"))
             {
-                playerRec.x = SCREEN_WIDTH / 2 -25;
-                playerRec.y = SCREEN_HEIGHT / 2-25;
+                player.setPos({ SCREEN_WIDTH / 2 - 25,SCREEN_HEIGHT / 2 - 25 });
             }
             rlImGuiEnd();
            // playerRec.x = vec1.x;
           //  playerRec.y = vec1.y;
 
         }
-
-        playerRec.x += (vel.x * dt) + 0.5f * accel.x*dt*dt;
-        playerRec.y += (vel.y * dt) + 0.5f * accel.y * dt * dt;
-        vel.x += accel.x*dt;
-        vel.y += accel.y*dt;
-        float currentspeed = sqrt(vel.x * vel.x + vel.y * vel.y);
+        /*
+        player.setPos(player.getPos() + ((player.getVel() * dt) + (player.getAccel() * 0.5f * dt * dt)));
+       // playerRec.x += (vel.x * dt) + 0.5f * accel.x*dt*dt;
+      //  playerRec.y += (vel.y * dt) + 0.5f * accel.y * dt * dt;
+        player.setVel(player.getVel() + player.getAccel() * dt);
+    //    vel.x += accel.x*dt;
+       // vel.y += accel.y*dt;
+        float currentspeed = sqrt((player.getVel().x * (player.getVel().x)) + (player.getVel().y * (player.getVel().y)));
         if (currentspeed > maxSpeed)
         {
-            vel = Scale (vel ,(maxSpeed / currentspeed));
+            player.setVel(Scale(player.getVel(), (maxSpeed / currentspeed)));
         }
+        */
+        player.Update();
         if (IsKeyDown(KEY_G))
         {
             std::cout << "dt " << dt << std::endl;
@@ -138,13 +230,13 @@ int main(void)
             std::cout << "targetdistance  " << targetDistance.x <<" | " << targetDistance.y << std::endl;
             std::cout << "target normal  " << tDNormal.x << " | " << tDNormal.y << std::endl;
         }
-        if (CheckCollisionCircleRec(GetMousePosition(), 20, playerRec))
+        if (CheckCollisionCircleRec(GetMousePosition(), 20, { player.getPos().x, player.getPos().y,player.getWidth(),player.getHeight() }))
             circleColor = PINK;
         else
             circleColor = RED;
-        DrawRectangle(playerRec.x, playerRec.y, playerRec.width, playerRec.height, BLUE);
-        DrawLineV({ playerRec.x+25, playerRec.y+25 }, { vel.x + playerRec.x +25 ,vel.y + playerRec.y + 25 }, RED);
-        DrawLineV({ playerRec.x + 25, playerRec.y + 25 }, { accel.x + playerRec.x + 25 ,accel.y + playerRec.y + 25 }, GREEN);
+        DrawRectangle(player.getPos().x, player.getPos().y, 50, 50, BLUE);
+        DrawLineV({ player.getPos().x+25, player.getPos().y+25 }, { player.getVel().x + player.getPos().x +25 ,player.getVel().y + player.getPos().y + 25 }, RED);
+        DrawLineV({ player.getPos().x + 25, player.getPos().y + 25 }, { player.getAccel().x + player.getPos().x + 25 ,player.getAccel().y + player.getPos().y + 25 }, GREEN);
         DrawCircle(GetMousePosition().x, GetMousePosition().y, 20, circleColor);
         EndDrawing();
     }
