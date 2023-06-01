@@ -121,8 +121,7 @@ int main(void)
     Color circleColor = RED;
 
 
-    //Ridgedbody player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, RED);
-
+    
     std::vector<Ridgedbody*> Birds;
     Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE));
     Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE));
@@ -149,15 +148,15 @@ int main(void)
 
         if (ImGui::SliderFloat("Rectangle X", &(playerRec.x), 0, SCREEN_WIDTH))
         {
-            //playerRec.x = vec1.x;
+            //Unused Function
         }
         if (ImGui::SliderFloat("Rectangle Y", &(playerRec.y), 0, SCREEN_HEIGHT))
         {
-           // playerRec.y = vec1.y;
+            //Unused Function
         }
         if (ImGui::Button("Print"))
         {
-         //   std::cout << "Velocity" << player.getVel().x << "|" << player.getVel().y << std::endl;
+
         }
 
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
@@ -185,31 +184,6 @@ int main(void)
   
                 ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
 
-                /* 
-                targetDistance = { GetMousePosition().x - player.getPos().x - 25 ,  GetMousePosition().y - player.getPos().y - 25 };
-                Vector2 toTarget = Normalize(targetDistance);
-                Vector2 desiredVel = toTarget * maxSpeed;
-                Vector2 deltaVel = desiredVel - player.getVel();
-                player.setAccel(Normalize(deltaVel) * ac)  ;
-                */
-              //  float tdhyp = { sqrt(targetDistance.x * targetDistance.x + targetDistance.y * targetDistance.y) };
-                /*
-                tDNormal = Normalize(targetDistance);
-
-                Vector2 desiredVel = (tDNormal * maxSpeed) +  vel*flee;
-                /*                
-                accel.x = tDNormal.x * ac;
-                accel.y = tDNormal.y * ac;
-                */
-                //float dvhp = { sqrt(desiredVel.x * desiredVel.x + desiredVel.y * desiredVel.y) };
-        //        Vector2 dVNormal = Normalize(desiredVel);// { desiredVel.x / dvhp,desiredVel.y / dvhp };
-               /*
-                accel.x = dVNormal.x * ac * flee;
-                accel.y = dVNormal.y * ac * flee;
-                */  /*
-               accel.x = desiredVel.x * ac * flee;
-               accel.y = desiredVel.y * ac * flee;*/
-
             }
             else
             { 
@@ -221,7 +195,6 @@ int main(void)
             {
                 ridgedbody->setMaxSpeed(maxSpeed);
             }
- //           player.setMaxSpeed(maxSpeed);
             if (ImGui::Button("Reset Vel/Accel"))
             {
 
@@ -230,26 +203,13 @@ int main(void)
             }
             if (ImGui::Button("Reset Position"))
             {
-              //  player.setPos({ SCREEN_WIDTH / 2 - 25,SCREEN_HEIGHT / 2 - 25 });
+        
             }
             rlImGuiEnd();
-           // playerRec.x = vec1.x;
-          //  playerRec.y = vec1.y;
+ 
 
         }
-        /*
-        player.setPos(player.getPos() + ((player.getVel() * dt) + (player.getAccel() * 0.5f * dt * dt)));
-       // playerRec.x += (vel.x * dt) + 0.5f * accel.x*dt*dt;
-      //  playerRec.y += (vel.y * dt) + 0.5f * accel.y * dt * dt;
-        player.setVel(player.getVel() + player.getAccel() * dt);
-    //    vel.x += accel.x*dt;
-       // vel.y += accel.y*dt;
-        float currentspeed = sqrt((player.getVel().x * (player.getVel().x)) + (player.getVel().y * (player.getVel().y)));
-        if (currentspeed > maxSpeed)
-        {
-            player.setVel(Scale(player.getVel(), (maxSpeed / currentspeed)));
-        }
-        */
+
         for (const auto ridgedbody : Birds)
         {
             ridgedbody->Update();
@@ -275,12 +235,6 @@ int main(void)
             DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getVel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getVel().y + ridgedbody->getPos().y + 25 }, RED);
             DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getAccel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getAccel().y + ridgedbody->getPos().y + 25 }, GREEN);
         }
-
-        /*
-        DrawRectangle(player.getPos().x, player.getPos().y, 50, 50, BLUE);
-        DrawLineV({ player.getPos().x+25, player.getPos().y+25 }, { player.getVel().x + player.getPos().x +25 ,player.getVel().y + player.getPos().y + 25 }, RED);
-        DrawLineV({ player.getPos().x + 25, player.getPos().y + 25 }, { player.getAccel().x + player.getPos().x + 25 ,player.getAccel().y + player.getPos().y + 25 }, GREEN);
-        DrawCircle(GetMousePosition().x, GetMousePosition().y, 20, circleColor);*/
         EndDrawing();
         
     }
