@@ -28,13 +28,13 @@ public:
     void Update()
     {
        const float dt = GetFrameTime();
-       position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
-       velocity = velocity + accel* dt;
-        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
+       float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
         if (currentspeed > maxSpeed)
         {
             velocity = (Scale(velocity, (maxSpeed / currentspeed)));
         }
+        position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
+        velocity = velocity + accel * dt;
     }
 
     void setAccel(Vector2 a)
@@ -78,16 +78,21 @@ public:
      
 };
 
-Vector2 Seek(const Vector2& agentPos, const Vector2& agnetVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
 {
     Vector2 targetDistance = { targetPos-agentPos };
     Vector2 toTarget = Normalize(targetDistance);
     Vector2 desiredVel = toTarget * desiredSpeed;
-    Vector2 deltaVel = desiredVel - agnetVel;
+    Vector2 deltaVel = desiredVel - agentVel;
     Vector2 outputAccel = Normalize(deltaVel) * accel;
    std::cout << "target " << targetPos.x << "|" << targetPos.y << std::endl;
     return outputAccel;
 }
+Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+{   
+    return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
+}
+
 
 Vector2 Normalized(Vector2 vec)
 {
@@ -151,14 +156,19 @@ int main(void)
             ImGui::Checkbox("Seek", &seeking);
             if (seeking)
             {
-                
-                ImGui::Checkbox("Fleeing", &fleeing);
-                if (fleeing) flee = -1;
-                else flee = 1;
-                ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
                 Vector2 pOffset = { 25,25 };
-                player.setAccel(Seek(player.getPos(), player.getVel(),  GetMousePosition() -pOffset
-              , maxSpeed, ac));
+                ImGui::Checkbox("Fleeing", &fleeing);
+                if (!fleeing)
+                { 
+                    player.setAccel(Seek(player.getPos(), player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                }
+                else
+                {
+                    player.setAccel(Flee(player.getPos(), player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                }
+  
+                ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
+
                 /* 
                 targetDistance = { GetMousePosition().x - player.getPos().x - 25 ,  GetMousePosition().y - player.getPos().y - 25 };
                 Vector2 toTarget = Normalize(targetDistance);
