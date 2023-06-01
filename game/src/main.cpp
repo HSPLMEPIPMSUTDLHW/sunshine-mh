@@ -1,6 +1,7 @@
 #include "rlImGui.h"
 #include <iostream>
 #include "Math.h"
+#include <vector>
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
@@ -74,6 +75,11 @@ public:
         return width;
     }
 
+    Color getColor()
+    {
+        return color;
+    }
+
 
      
 };
@@ -115,9 +121,12 @@ int main(void)
     Color circleColor = RED;
 
 
-    Ridgedbody player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, RED);
+    //Ridgedbody player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, RED);
 
-
+    std::vector<Ridgedbody*> Birds;
+    Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE));
+    Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE));
+    
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
     static Vector2 accel = { 0,0 };
@@ -148,7 +157,7 @@ int main(void)
         }
         if (ImGui::Button("Print"))
         {
-            std::cout << "Velocity" << player.getVel().x << "|" << player.getVel().y << std::endl;
+         //   std::cout << "Velocity" << player.getVel().x << "|" << player.getVel().y << std::endl;
         }
 
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
@@ -160,11 +169,18 @@ int main(void)
                 ImGui::Checkbox("Fleeing", &fleeing);
                 if (!fleeing)
                 { 
-                    player.setAccel(Seek(player.getPos(), player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    for (const auto ridgedbody : Birds)
+                    {
+                        ridgedbody->setAccel(Seek(ridgedbody->getPos(), ridgedbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    }
+                    
                 }
                 else
                 {
-                    player.setAccel(Flee(player.getPos(), player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    for (const auto ridgedbody : Birds)
+                    {
+                        ridgedbody->setAccel(Flee(ridgedbody->getPos(), ridgedbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    }
                 }
   
                 ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
@@ -201,7 +217,11 @@ int main(void)
             ImGui::SliderFloat("Rectangle Accel Y", &accel.y, -50, 50);
             }
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
-            player.setMaxSpeed(maxSpeed);
+            for (const auto ridgedbody : Birds)
+            {
+                ridgedbody->setMaxSpeed(maxSpeed);
+            }
+ //           player.setMaxSpeed(maxSpeed);
             if (ImGui::Button("Reset Vel/Accel"))
             {
 
@@ -210,7 +230,7 @@ int main(void)
             }
             if (ImGui::Button("Reset Position"))
             {
-                player.setPos({ SCREEN_WIDTH / 2 - 25,SCREEN_HEIGHT / 2 - 25 });
+              //  player.setPos({ SCREEN_WIDTH / 2 - 25,SCREEN_HEIGHT / 2 - 25 });
             }
             rlImGuiEnd();
            // playerRec.x = vec1.x;
@@ -230,7 +250,11 @@ int main(void)
             player.setVel(Scale(player.getVel(), (maxSpeed / currentspeed)));
         }
         */
-        player.Update();
+        for (const auto ridgedbody : Birds)
+        {
+            ridgedbody->Update();
+        }
+;
         if (IsKeyDown(KEY_G))
         {
             std::cout << "dt " << dt << std::endl;
@@ -240,15 +264,25 @@ int main(void)
             std::cout << "targetdistance  " << targetDistance.x <<" | " << targetDistance.y << std::endl;
             std::cout << "target normal  " << tDNormal.x << " | " << tDNormal.y << std::endl;
         }
-        if (CheckCollisionCircleRec(GetMousePosition(), 20, { player.getPos().x, player.getPos().y,player.getWidth(),player.getHeight() }))
-            circleColor = PINK;
-        else
-            circleColor = RED;
+     
+        for (const auto ridgedbody : Birds)
+        {
+            if (CheckCollisionCircleRec(GetMousePosition(), 20, { ridgedbody->getPos().x,  ridgedbody->getPos().y, ridgedbody->getWidth(), ridgedbody->getHeight() }))
+                circleColor = PINK;
+            else
+                circleColor = RED;
+            DrawRectangle(ridgedbody->getPos().x, ridgedbody->getPos().y, 50, 50, ridgedbody->getColor());
+            DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getVel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getVel().y + ridgedbody->getPos().y + 25 }, RED);
+            DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getAccel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getAccel().y + ridgedbody->getPos().y + 25 }, GREEN);
+        }
+
+        /*
         DrawRectangle(player.getPos().x, player.getPos().y, 50, 50, BLUE);
         DrawLineV({ player.getPos().x+25, player.getPos().y+25 }, { player.getVel().x + player.getPos().x +25 ,player.getVel().y + player.getPos().y + 25 }, RED);
         DrawLineV({ player.getPos().x + 25, player.getPos().y + 25 }, { player.getAccel().x + player.getPos().x + 25 ,player.getAccel().y + player.getPos().y + 25 }, GREEN);
-        DrawCircle(GetMousePosition().x, GetMousePosition().y, 20, circleColor);
+        DrawCircle(GetMousePosition().x, GetMousePosition().y, 20, circleColor);*/
         EndDrawing();
+        
     }
 
     CloseWindow();
