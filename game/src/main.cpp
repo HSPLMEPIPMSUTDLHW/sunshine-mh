@@ -94,6 +94,8 @@ public:
      
 };
 
+//Takes the position of the agent, the target, the current velocity of the agent, the max speed and the max acceleration
+// Returns a vector for acceleration that will get the agent to the target that accounts for the current velocity of the agent
 Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
 {
     Vector2 targetDistance = { targetPos-agentPos };
@@ -104,6 +106,8 @@ Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& ta
   
     return outputAccel;
 }
+//Takes everything for seek, but makes the max acceleration negative
+//This causes the agent to accelerate away from the target.
 Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
 {   
     return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
@@ -167,17 +171,15 @@ int main(void)
         {
             //Unused Function
         }
-        if (ImGui::Button("Print"))
-        {
 
-        }
 
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
             ImGui::SliderFloat("Rectangle Vel Y", &vel.y, -50, 50);
             ImGui::Checkbox("Seek", &seeking);
+            //Other seek function that makes them seek towards or flee from the mouse.
             if (seeking)
             {
-   
+            
                 ImGui::Checkbox("Fleeing", &fleeing);
                 if (!fleeing)
                 { 
@@ -204,11 +206,12 @@ int main(void)
                 {
                     for (const auto Rigidbody : Birds)
                     {
+                        // If the left mouse button is being held down, The agents seek towards the mouse 
                         Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                 }
                 else
-                {
+                {                
                     for (const auto Rigidbody : Birds)
                     {
                    
@@ -235,7 +238,7 @@ int main(void)
                     }
                 }
             }
-            ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
+            ImGui::SliderFloat("Seek Accel", &ac, 0, 500); // The max acceleration
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
             for (const auto Rigidbody : Birds)
             {
