@@ -2,10 +2,13 @@
 #include <iostream>
 #include "Math.h"
 #include <vector>
+#include <string>
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
-class Ridgedbody
+//Class for the Rigidbody
+
+class Rigidbody
 {
 private:
     Vector2 position;
@@ -15,8 +18,9 @@ private:
     float width, height;
     float maxSpeed;
     Rectangle dst;
+    std::string name; // Name is like a tag so I can identify objects if they are in a container
 public:
-    Ridgedbody(float x, float y, float w, float h, Color c)
+    Rigidbody(float x, float y, float w, float h, Color c, std::string n)
     {
         color = c;
         dst = { x,y,w,h};
@@ -24,10 +28,12 @@ public:
         velocity = { 0,0 };
         accel = { 0,0 };
         maxSpeed = 0;
+        name = n;
     }
 
     void Update()
     {
+        //When update is called,
        const float dt = GetFrameTime();
        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
         if (currentspeed > maxSpeed)
@@ -79,6 +85,10 @@ public:
     {
         return color;
     }
+    std::string getName()
+    {
+        return name;
+    }
 
 
      
@@ -91,7 +101,7 @@ Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& ta
     Vector2 desiredVel = toTarget * desiredSpeed;
     Vector2 deltaVel = desiredVel - agentVel;
     Vector2 outputAccel = Normalize(deltaVel) * accel;
-   std::cout << "target " << targetPos.x << "|" << targetPos.y << std::endl;
+  
     return outputAccel;
 }
 Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
@@ -119,13 +129,16 @@ int main(void)
     Vector2 targetDistance;
     Vector2 tDNormal;
     Color circleColor = RED;
-
+    Vector2 pOffset = { 25,25 };
 
     
-    std::vector<Ridgedbody*> Birds;
-    Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE));
-    Birds.push_back(new Ridgedbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE));
-    
+    std::vector<Rigidbody*> Birds;
+    Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE,"Blue"));
+    Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
+
+    Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
+    Rigidbody Obstacle2(((SCREEN_WIDTH / 4) - 25), ((SCREEN_HEIGHT / 1.3) - 25), 50, 50, BLACK,"");
+
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
     static Vector2 accel = { 0,0 };
@@ -164,36 +177,69 @@ int main(void)
             ImGui::Checkbox("Seek", &seeking);
             if (seeking)
             {
-                Vector2 pOffset = { 25,25 };
+   
                 ImGui::Checkbox("Fleeing", &fleeing);
                 if (!fleeing)
                 { 
-                    for (const auto ridgedbody : Birds)
+                    for (const auto Rigidbody : Birds)
                     {
-                        ridgedbody->setAccel(Seek(ridgedbody->getPos(), ridgedbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                        Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                     
                 }
                 else
                 {
-                    for (const auto ridgedbody : Birds)
+                    for (const auto Rigidbody : Birds)
                     {
-                        ridgedbody->setAccel(Flee(ridgedbody->getPos(), ridgedbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                        Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                 }
   
-                ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
+
 
             }
             else
             { 
-            ImGui::SliderFloat("Rectangle Accel X", &accel.x, -50, 50);
-            ImGui::SliderFloat("Rectangle Accel Y", &accel.y, -50, 50);
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                {
+                    for (const auto Rigidbody : Birds)
+                    {
+                        Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    }
+                }
+                else
+                {
+                    for (const auto Rigidbody : Birds)
+                    {
+                   
+                        //Checks which obstacle is closer, then sets it to the target
+                        // The target's position is used in the Flee function and the agent flees from it
+                        Vector2 targetObs;
+                        if (sqrtf((Obstacle1.getPos().x - Rigidbody->getPos().x) * (Obstacle1.getPos().x - Rigidbody->getPos().x)
+                            + (Obstacle1.getPos().y - Rigidbody->getPos().y) * (Obstacle1.getPos().y - Rigidbody->getPos().y)) <
+                            sqrtf((Obstacle2.getPos().x - Rigidbody->getPos().x) * (Obstacle2.getPos().x - Rigidbody->getPos().x)
+                                + (Obstacle2.getPos().y - Rigidbody->getPos().y) * (Obstacle2.getPos().y - Rigidbody->getPos().y)))
+                        {
+                            targetObs = Obstacle1.getPos();
+                            std::cout << Rigidbody->getName() << ": OBS1: " << targetObs.x << "|" << targetObs.y << "|  " << sqrtf((Obstacle1.getPos().x - GetMousePosition().x) * (Obstacle1.getPos().x - GetMousePosition().x)
+                                + (Obstacle1.getPos().y - GetMousePosition().y) * (Obstacle1.getPos().y - GetMousePosition().y)) << std::endl;
+                        }
+                        else
+                        {
+                            targetObs = Obstacle2.getPos();
+                            std::cout << Rigidbody->getName() << ": OBS2: " << targetObs.x << "|" << targetObs.y << "|  " << sqrtf((Obstacle1.getPos().x - GetMousePosition().x) * (Obstacle1.getPos().x - GetMousePosition().x)
+                                + (Obstacle1.getPos().y - GetMousePosition().y) * (Obstacle1.getPos().y - GetMousePosition().y)) << std::endl;
+                        }
+                        Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), { targetObs.x-pOffset.x, targetObs.y - pOffset.y }, maxSpeed, ac));
+                        
+                    }
+                }
             }
+            ImGui::SliderFloat("Seek Accel", &ac, 0, 500);
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
-            for (const auto ridgedbody : Birds)
+            for (const auto Rigidbody : Birds)
             {
-                ridgedbody->setMaxSpeed(maxSpeed);
+                Rigidbody->setMaxSpeed(maxSpeed);
             }
             if (ImGui::Button("Reset Vel/Accel"))
             {
@@ -210,9 +256,9 @@ int main(void)
 
         }
 
-        for (const auto ridgedbody : Birds)
+        for (const auto Rigidbody : Birds)
         {
-            ridgedbody->Update();
+            Rigidbody->Update();
         }
 ;
         if (IsKeyDown(KEY_G))
@@ -225,16 +271,18 @@ int main(void)
             std::cout << "target normal  " << tDNormal.x << " | " << tDNormal.y << std::endl;
         }
      
-        for (const auto ridgedbody : Birds)
+        for (const auto Rigidbody : Birds)
         {
-            if (CheckCollisionCircleRec(GetMousePosition(), 20, { ridgedbody->getPos().x,  ridgedbody->getPos().y, ridgedbody->getWidth(), ridgedbody->getHeight() }))
+            if (CheckCollisionCircleRec(GetMousePosition(), 20, { Rigidbody->getPos().x,  Rigidbody->getPos().y, Rigidbody->getWidth(), Rigidbody->getHeight() }))
                 circleColor = PINK;
             else
                 circleColor = RED;
-            DrawRectangle(ridgedbody->getPos().x, ridgedbody->getPos().y, 50, 50, ridgedbody->getColor());
-            DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getVel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getVel().y + ridgedbody->getPos().y + 25 }, RED);
-            DrawLineV({ ridgedbody->getPos().x + 25, ridgedbody->getPos().y + 25 }, { ridgedbody->getAccel().x + ridgedbody->getPos().x + 25 ,ridgedbody->getAccel().y + ridgedbody->getPos().y + 25 }, GREEN);
+            DrawRectangle(Rigidbody->getPos().x, Rigidbody->getPos().y, 50, 50, Rigidbody->getColor());
+            DrawLineV({ Rigidbody->getPos().x + 25, Rigidbody->getPos().y + 25 }, { Rigidbody->getVel().x + Rigidbody->getPos().x + 25 ,Rigidbody->getVel().y + Rigidbody->getPos().y + 25 }, RED);
+            DrawLineV({ Rigidbody->getPos().x + 25, Rigidbody->getPos().y + 25 }, { Rigidbody->getAccel().x + Rigidbody->getPos().x + 25 ,Rigidbody->getAccel().y + Rigidbody->getPos().y + 25 }, GREEN);
         }
+        DrawRectangle(Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50, Obstacle1.getColor());
+        DrawRectangle(Obstacle2.getPos().x, Obstacle2.getPos().y, 50, 50, Obstacle2.getColor());
         EndDrawing();
         
     }
