@@ -260,16 +260,18 @@ int main(void)
         DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, playerPosOffset+Forward*100, RED);
         */
 
-        Vector2 playerPosOffset = {  Player.getPos().x+ 25,Player.getPos().y + 25 };
+        Vector2 playerPosOffset = { Player.getPos().x + 25,Player.getPos().y + 25 };
         Vector2 defaultAngle = { 150 + Player.getPos().x + 25 ,Player.getPos().y + 25 };
-        float ForwardAngle = Angle(playerPosOffset, GetMousePosition() );
-        Vector2 Forward = Normalize(Rotate(defaultAngle, ForwardAngle));
+        float ForwardAngle = atan2f(Player.getVel().y , Player.getVel().x );
+        Vector2 Forward = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle));
         DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
         DrawLineV({ 100,600 }, { 200,600 }, GREEN);
         DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
         DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
         DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, defaultAngle, ORANGE);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + Forward.x * 100),( Player.getPos().y + Forward.y* 100) }, RED);
+        // DrawLineV({ 0,0 }, GetMousePosition(), BLUE);
+        // DrawLineV({ 0,0 }, { (Forward.x * 100),(Forward.y * 100) }, RED);
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + Forward.x * 100) + 25,(Player.getPos().y + Forward.y * 100) + 25 }, RED);
         DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, GetMousePosition(), BLUE);
         DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { Player.getVel().x + Player.getPos().x + 25 ,Player.getVel().y + Player.getPos().y + 25 }, GREEN);
         if (IsKeyPressed(KEY_H))
