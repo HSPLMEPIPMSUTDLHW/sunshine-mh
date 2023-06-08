@@ -1,6 +1,7 @@
 #include "rlImGui.h"
 #include <iostream>
 #include "Math.h"
+ 
 #include <vector>
 #include <string>
 #define SCREEN_WIDTH 1280
@@ -137,11 +138,12 @@ int main(void)
 
     
     std::vector<Rigidbody*> Birds;
-    Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE,"Blue"));
-    Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
+  //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE,"Blue"));
+  //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
 
-    Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
-    Rigidbody Obstacle2(((SCREEN_WIDTH / 4) - 25), ((SCREEN_HEIGHT / 1.3) - 25), 50, 50, BLACK,"");
+    Rigidbody Player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, "Blue");
+   // Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
+  //  Rigidbody Obstacle2(((SCREEN_WIDTH / 4) - 25), ((SCREEN_HEIGHT / 1.3) - 25), 50, 50, BLACK,"");
 
     Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
     static Vector2 vel = { 0,0 };
@@ -183,67 +185,38 @@ int main(void)
                 ImGui::Checkbox("Fleeing", &fleeing);
                 if (!fleeing)
                 { 
+                    /*
                     for (const auto Rigidbody : Birds)
                     {
                         Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
-                    
+                    */
+                    Player.setAccel(Seek(Player.getPos(), Player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                 }
                 else
                 {
+                    /*
                     for (const auto Rigidbody : Birds)
                     {
                         Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
+                    */
+                    Player.setAccel(Flee(Player.getPos(), Player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                 }
   
 
 
             }
-            else
-            { 
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                {
-                    for (const auto Rigidbody : Birds)
-                    {
-                        // If the left mouse button is being held down, The agents seek towards the mouse 
-                        Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
-                    }
-                }
-                else
-                {                
-                    for (const auto Rigidbody : Birds)
-                    {
-                   
-                        //Checks which obstacle is closer, then sets it to the target
-                        // The target's position is used in the Flee function and the agent flees from it
-                        Vector2 targetObs;
-                        if (sqrtf((Obstacle1.getPos().x - Rigidbody->getPos().x) * (Obstacle1.getPos().x - Rigidbody->getPos().x)
-                            + (Obstacle1.getPos().y - Rigidbody->getPos().y) * (Obstacle1.getPos().y - Rigidbody->getPos().y)) <
-                            sqrtf((Obstacle2.getPos().x - Rigidbody->getPos().x) * (Obstacle2.getPos().x - Rigidbody->getPos().x)
-                                + (Obstacle2.getPos().y - Rigidbody->getPos().y) * (Obstacle2.getPos().y - Rigidbody->getPos().y)))
-                        {
-                            targetObs = Obstacle1.getPos();
-                            std::cout << Rigidbody->getName() << ": OBS1: " << targetObs.x << "|" << targetObs.y << "|  " << sqrtf((Obstacle1.getPos().x - GetMousePosition().x) * (Obstacle1.getPos().x - GetMousePosition().x)
-                                + (Obstacle1.getPos().y - GetMousePosition().y) * (Obstacle1.getPos().y - GetMousePosition().y)) << std::endl;
-                        }
-                        else
-                        {
-                            targetObs = Obstacle2.getPos();
-                            std::cout << Rigidbody->getName() << ": OBS2: " << targetObs.x << "|" << targetObs.y << "|  " << sqrtf((Obstacle1.getPos().x - GetMousePosition().x) * (Obstacle1.getPos().x - GetMousePosition().x)
-                                + (Obstacle1.getPos().y - GetMousePosition().y) * (Obstacle1.getPos().y - GetMousePosition().y)) << std::endl;
-                        }
-                        Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), { targetObs.x-pOffset.x, targetObs.y - pOffset.y }, maxSpeed, ac));
-                        
-                    }
-                }
-            }
             ImGui::SliderFloat("Seek Accel", &ac, 0, 500); // The max acceleration
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
+            /*
             for (const auto Rigidbody : Birds)
             {
                 Rigidbody->setMaxSpeed(maxSpeed);
             }
+            */
+            Player.setMaxSpeed(maxSpeed);
+
             if (ImGui::Button("Reset Vel/Accel"))
             {
 
@@ -258,22 +231,58 @@ int main(void)
  
 
         }
-
+        /*
         for (const auto Rigidbody : Birds)
         {
             Rigidbody->Update();
         }
-;
+        */
+        Player.Update();
+
         if (IsKeyDown(KEY_G))
         {
             std::cout << "dt " << dt << std::endl;
         }
+
+        if (CheckCollisionCircleRec(GetMousePosition(), 20, { Player.getPos().x,  Player.getPos().y, Player.getWidth(), Player.getHeight() }))
+            circleColor = PINK;
+        else
+            circleColor = RED;
+        /*
+                Vector2 playerPosOffsetNormal = Normalize(Vector2{ Player.getVel().x + 25, Player.getVel().y + 25 });
+        Vector2 playerPosOffset = { Player.getVel().x + 25, Player.getVel().y + 25 };
+        Vector2 defaultAngle = { 150 + Player.getPos().x + 25 ,Player.getPos().y + 25 };
+        float ForwardAngle = atan2f(playerPosOffsetNormal.x, playerPosOffsetNormal.y);
+        ForwardAngle = fmodf(ForwardAngle + 2 * PI, 2 * PI);
+
+        Vector2 Forward = Vector2{ cosf(ForwardAngle), sinf(ForwardAngle) };
+        DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, playerPosOffset+Forward*100, RED);
+        */
+
+        Vector2 playerPosOffset = {  Player.getPos().x+ 25,Player.getPos().y + 25 };
+        Vector2 defaultAngle = { 150 + Player.getPos().x + 25 ,Player.getPos().y + 25 };
+        float ForwardAngle = Angle(playerPosOffset, GetMousePosition() );
+        Vector2 Forward = Normalize(Rotate(defaultAngle, ForwardAngle));
+        DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
+        DrawLineV({ 100,600 }, { 200,600 }, GREEN);
+        DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
+        DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, defaultAngle, ORANGE);
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + Forward.x * 100),( Player.getPos().y + Forward.y* 100) }, RED);
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, GetMousePosition(), BLUE);
+        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { Player.getVel().x + Player.getPos().x + 25 ,Player.getVel().y + Player.getPos().y + 25 }, GREEN);
         if (IsKeyPressed(KEY_H))
         {
-            std::cout << "targetdistance  " << targetDistance.x <<" | " << targetDistance.y << std::endl;
-            std::cout << "target normal  " << tDNormal.x << " | " << tDNormal.y << std::endl;
+            std::cout << "Angle " << ForwardAngle*RAD2DEG << std::endl;
+            std::cout << "Angle " << ForwardAngle * DEG2RAD << std::endl;
+            std::cout << "Angle " << ForwardAngle << std::endl;
+            std::cout << "Forward " << Forward.x << "||" << Forward.y << std::endl;
+            std::cout << "Forward " << (Player.getPos().x + 25 + Forward.x) << "||" << (Player.getPos().y + 25 + Forward.y) << std::endl;
         }
-     
+
+       // DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { Player.getAccel().x + Player.getPos().x + 25 ,Player.getAccel().y + Player.getPos().y + 25 }, GREEN);
+        /*
         for (const auto Rigidbody : Birds)
         {
             if (CheckCollisionCircleRec(GetMousePosition(), 20, { Rigidbody->getPos().x,  Rigidbody->getPos().y, Rigidbody->getWidth(), Rigidbody->getHeight() }))
@@ -281,11 +290,14 @@ int main(void)
             else
                 circleColor = RED;
             DrawRectangle(Rigidbody->getPos().x, Rigidbody->getPos().y, 50, 50, Rigidbody->getColor());
-            DrawLineV({ Rigidbody->getPos().x + 25, Rigidbody->getPos().y + 25 }, { Rigidbody->getVel().x + Rigidbody->getPos().x + 25 ,Rigidbody->getVel().y + Rigidbody->getPos().y + 25 }, RED);
+            DrawLineV({ Rigidbody->getPos() .x + 25, Rigidbody->getPos().y + 25 }, { Rigidbody->getVel().x + Rigidbody->getPos().x + 25 ,Rigidbody->getVel().y + Rigidbody->getPos().y + 25 }, RED);
             DrawLineV({ Rigidbody->getPos().x + 25, Rigidbody->getPos().y + 25 }, { Rigidbody->getAccel().x + Rigidbody->getPos().x + 25 ,Rigidbody->getAccel().y + Rigidbody->getPos().y + 25 }, GREEN);
         }
-        DrawRectangle(Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50, Obstacle1.getColor());
-        DrawRectangle(Obstacle2.getPos().x, Obstacle2.getPos().y, 50, 50, Obstacle2.getColor());
+        */
+        //DrawRectangle(Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50, Obstacle1.getColor());
+       // DrawRectangle(Obstacle2.getPos().x, Obstacle2.getPos().y, 50, 50, Obstacle2.getColor());
+
+      //  std::cout << "Angle " << ForwardAngle << std::endl;
         EndDrawing();
         
     }
