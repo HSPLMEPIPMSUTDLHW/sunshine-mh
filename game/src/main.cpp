@@ -114,6 +114,11 @@ Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& ta
     return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
 }
 
+bool CheckCollisionLineCircle(Vector2 lineStart, Vector2 lineEnd, Vector2 circlePosition, float circleRadius)
+{
+    Vector2 nearest = NearestPoint(lineStart, lineEnd, circlePosition);
+    return Distance(nearest, circlePosition) <= circleRadius;
+}
 
 Vector2 Normalized(Vector2 vec)
 {
@@ -142,10 +147,10 @@ int main(void)
   //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
 
     Rigidbody Player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, "Blue");
-   // Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
+    Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
   //  Rigidbody Obstacle2(((SCREEN_WIDTH / 4) - 25), ((SCREEN_HEIGHT / 1.3) - 25), 50, 50, BLACK,"");
 
-    Rectangle playerRec{ rectpos.x, rectpos.y, 50, 50 };
+    Rectangle playerRec{ Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50 };
     static Vector2 vel = { 0,0 };
     static Vector2 accel = { 0,0 };
     static Vector2 vec1 = { playerRec.x, playerRec.y };
@@ -165,14 +170,10 @@ int main(void)
             rlImGuiBegin();
           
 
-        if (ImGui::SliderFloat("Rectangle X", &(playerRec.x), 0, SCREEN_WIDTH))
-        {
-            //Unused Function
-        }
-        if (ImGui::SliderFloat("Rectangle Y", &(playerRec.y), 0, SCREEN_HEIGHT))
-        {
-            //Unused Function
-        }
+        ImGui::SliderFloat("Obstacle X", &(playerRec.x), 0, SCREEN_WIDTH);
+        ImGui::SliderFloat("Obstacle Y", &(playerRec.y), 0, SCREEN_HEIGHT);
+ 
+        Obstacle1.setPos({ playerRec.x,playerRec.y });
 
 
             ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
@@ -264,28 +265,57 @@ int main(void)
         Vector2 defaultAngle = { 150 + Player.getPos().x + 25 ,Player.getPos().y + 25 };
         float ForwardAngle = atan2f(Player.getVel().y , Player.getVel().x );
         Vector2 Forward = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle));
-        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 45*DEG2RAD));
-        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 45 * DEG2RAD));
-        DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
+        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 15*DEG2RAD));
+        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 15 * DEG2RAD));
+
+
+    //    DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
+        DrawCircle(Player.getPos().x, Player.getPos().y, 25, Player.getColor());
+        DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
+
+
         DrawLineV({ 100,600 }, { 200,600 }, GREEN);
         DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, defaultAngle, ORANGE);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, defaultAngle, ORANGE);
         // DrawLineV({ 0,0 }, GetMousePosition(), BLUE);
         // DrawLineV({ 0,0 }, { (Forward.x * 100),(Forward.y * 100) }, RED);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + Forward.x * 150) + 25,(Player.getPos().y + Forward.y * 150) + 25 }, RED);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + WhiskerLeft.x * 150) + 25,(Player.getPos().y + WhiskerLeft.y * 150) + 25 }, RED);
-       // DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { (Player.getPos().x + WhiskerLeft.x * 100) + 25,(Player.getPos().y + WhiskerLeft.y * 100) + 25 }, RED);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, GetMousePosition(), BLUE);
-        DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { Player.getVel().x + Player.getPos().x + 25 ,Player.getVel().y + Player.getPos().y + 25 }, GREEN);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150)  }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150)  }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150)  }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, GetMousePosition(), BLUE);
+        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y  }, GREEN);
+        Vector2 point = NearestPoint(Player.getPos(), { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, Obstacle1.getPos());
+        Vector2 pointRight = NearestPoint(Player.getPos(), { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150) }, Obstacle1.getPos());
+        Vector2 pointLeft = NearestPoint(Player.getPos(), { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150) }, Obstacle1.getPos());
         if (IsKeyPressed(KEY_H))
         {
-            std::cout << "Angle " << ForwardAngle*RAD2DEG << std::endl;
-            std::cout << "Angle " << ForwardAngle * DEG2RAD << std::endl;
-            std::cout << "Angle " << ForwardAngle << std::endl;
-            std::cout << "Forward " << Forward.x << "||" << Forward.y << std::endl;
-            std::cout << "Forward " << (Player.getPos().x + 25 + Forward.x) << "||" << (Player.getPos().y + 25 + Forward.y) << std::endl;
-        }
+           
+            std::cout << "V " << Player.getVel().x << "||" << Player.getVel().y << std::endl;
+       //     std::cout << "Ob " << Obstacle1.getPos().x << "||" << Obstacle1.getPos().y << std::endl;
 
+  
+        }
+        if (CheckCollisionLineCircle(Player.getPos(), point, Obstacle1.getPos(),25))
+        {
+         //   std::cout << "P  " << point.x << "||" << point.y << std::endl;
+        }
+        if (CheckCollisionLineCircle(Player.getPos(), pointRight, Obstacle1.getPos(), 25))
+        {
+            Player.setVel(Vector2(Rotate(Player.getVel(), 1 * DEG2RAD)));
+        }
+        else if (CheckCollisionLineCircle(Player.getPos(), pointLeft, Obstacle1.getPos(), 25))
+        {
+            Player.setVel(Vector2(Rotate(Player.getVel(), -1 * DEG2RAD)));
+        }
+        /*
+        if (CheckCollisionPointCircle(point, Obstacle1.getPos(), 25))
+        {
+            std::cout << "P  " << point.x << "||" << point.y << std::endl;
+        }
+        */
+        DrawCircle(point.x, point.y, 5,PINK);
+        DrawCircle(pointRight.x, pointRight.y, 5, PINK);
+        DrawCircle(pointLeft.x, pointLeft.y, 5, PINK);
        // DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, { Player.getAccel().x + Player.getPos().x + 25 ,Player.getAccel().y + Player.getPos().y + 25 }, GREEN);
         /*
         for (const auto Rigidbody : Birds)
