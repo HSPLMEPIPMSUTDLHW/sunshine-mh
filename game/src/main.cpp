@@ -120,6 +120,15 @@ bool CheckCollisionLineCircle(Vector2 lineStart, Vector2 lineEnd, Vector2 circle
     return Distance(nearest, circlePosition) <= circleRadius;
 }
 
+Vector2 centripetalAccel(Vector2 v, float ac, bool clockwise)
+{
+    float angle;
+    if (clockwise) angle = 90 * DEG2RAD;
+    else angle = -90 * DEG2RAD;
+    return Rotate(Normalize(v), angle);
+
+}
+
 Vector2 Normalized(Vector2 vec)
 {
     float hyp =  sqrt((vec.x * vec.x )+( vec.y * vec.y)) ;
@@ -140,8 +149,9 @@ int main(void)
     Vector2 tDNormal;
     Color circleColor = RED;
     Vector2 pOffset = { 25,25 };
-
-    
+    Vector2 point;
+    Vector2 TurnAngle ={ 175,0 };
+   Vector2 Forward;
     std::vector<Rigidbody*> Birds;
   //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE,"Blue"));
   //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
@@ -192,7 +202,7 @@ int main(void)
                         Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                     */
-                    Player.setAccel(Seek(Player.getPos(), Player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    Player.setAccel(Seek(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
                 }
                 else
                 {
@@ -202,7 +212,7 @@ int main(void)
                         Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                     */
-                    Player.setAccel(Flee(Player.getPos(), Player.getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                    Player.setAccel(Flee(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
                 }
   
 
@@ -238,7 +248,7 @@ int main(void)
             Rigidbody->Update();
         }
         */
-        Player.Update();
+    
 
         if (IsKeyDown(KEY_G))
         {
@@ -260,33 +270,35 @@ int main(void)
         DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
         DrawLineV({ Player.getPos().x + 25, Player.getPos().y + 25 }, playerPosOffset+Forward*100, RED);
         */
-
+    
         Vector2 playerPosOffset = { Player.getPos().x + 25,Player.getPos().y + 25 };
-        Vector2 defaultAngle = { 150 + Player.getPos().x + 25 ,Player.getPos().y + 25 };
+        Vector2 defaultAngle = { 150 + Player.getPos().x   ,Player.getPos().y    };
+        Vector2 defaultNormal = Vector2{ 175,0 };
+      //  TurnAngle
         float ForwardAngle = atan2f(Player.getVel().y , Player.getVel().x );
-        Vector2 Forward = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle));
-        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 15*DEG2RAD));
-        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 15 * DEG2RAD));
+        Vector2 Forward = Normalize(Rotate(defaultNormal, ForwardAngle));
+        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25*DEG2RAD));
+        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
 
 
-    //    DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
-        DrawCircle(Player.getPos().x, Player.getPos().y, 25, Player.getColor());
-        DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
-
-
-        DrawLineV({ 100,600 }, { 200,600 }, GREEN);
-        DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, defaultAngle, ORANGE);
-        // DrawLineV({ 0,0 }, GetMousePosition(), BLUE);
-        // DrawLineV({ 0,0 }, { (Forward.x * 100),(Forward.y * 100) }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150)  }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150)  }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150)  }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, GetMousePosition(), BLUE);
-        DrawLineV({ Player.getPos().x , Player.getPos().y  }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y  }, GREEN);
-        Vector2 point = NearestPoint(Player.getPos(), { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, Obstacle1.getPos());
+        point = NearestPoint(Player.getPos(), { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, Obstacle1.getPos());
         Vector2 pointRight = NearestPoint(Player.getPos(), { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150) }, Obstacle1.getPos());
         Vector2 pointLeft = NearestPoint(Player.getPos(), { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150) }, Obstacle1.getPos());
+        Vector2 RoateFromRight((Rotate(Player.getVel(), 1 * DEG2RAD)));
+        Vector2 RoateFromLeft((Rotate(Player.getVel(), -1 * DEG2RAD)));
+
+        Player.Update();
+    //    DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
+   
+        if (IsKeyPressed(KEY_H))
+        {
+
+            std::cout << "V " << Forward.x << "||" << Forward.y << std::endl;
+            //     std::cout << "Ob " << Obstacle1.getPos().x << "||" << Obstacle1.getPos().y << std::endl;
+        //    std::cout << "V RIGHT" << RoateFromRight.x << "||" << RoateFromRight.y << std::endl;
+        //    std::cout << "V LEFT" << RoateFromLeft.x << "||" << RoateFromLeft.y << std::endl;
+
+        }
         if (IsKeyPressed(KEY_H))
         {
            
@@ -301,18 +313,37 @@ int main(void)
         }
         if (CheckCollisionLineCircle(Player.getPos(), pointRight, Obstacle1.getPos(), 25))
         {
-            Player.setVel(Vector2(Rotate(Player.getVel(), 1 * DEG2RAD)));
+         //   Player.setVel(Vector2(Rotate(Player.getVel(), 15 * DEG2RAD)));
+          //   TurnAngle = Rotate(TurnAngle, 5 * DEG2RAD);
+            Player.setVel(centripetalAccel(Player.getVel(), ac, true));
         }
         else if (CheckCollisionLineCircle(Player.getPos(), pointLeft, Obstacle1.getPos(), 25))
         {
-            Player.setVel(Vector2(Rotate(Player.getVel(), -1 * DEG2RAD)));
+         //  Player.setVel(Vector2(Rotate(Player.getVel(), -15 * DEG2RAD)));
+           //TurnAngle = Rotate(TurnAngle, -5 * DEG2RAD);
+            Player.setVel(centripetalAccel(Player.getVel(), ac, false));
         }
         /*
         if (CheckCollisionPointCircle(point, Obstacle1.getPos(), 25))
         {
-            std::cout << "P  " << point.x << "||" << point.y << std::endl;
+            std::cout << "P  " << point.x << "||" << point.y  << std::endl;
         }
         */
+        DrawCircle(Player.getPos().x, Player.getPos().y, 25, Player.getColor());
+        DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
+
+
+        DrawLineV({ 100,600 }, { 200,600 }, GREEN);
+        DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, defaultAngle, ORANGE);
+        // DrawLineV({ 0,0 }, GetMousePosition(), BLUE);
+        // DrawLineV({ 0,0 }, { (Forward.x * 100),(Forward.y * 100) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, GetMousePosition(), BLUE);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y }, GREEN);
+
         DrawCircle(point.x, point.y, 5,PINK);
         DrawCircle(pointRight.x, pointRight.y, 5, PINK);
         DrawCircle(pointLeft.x, pointLeft.y, 5, PINK);
