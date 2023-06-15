@@ -15,6 +15,8 @@ private:
     Vector2 position;
     Vector2 velocity;
     Vector2 accel; 
+    Vector2 angularVel;
+    float linearVel;
     Color color;
     float width, height;
     float maxSpeed;
@@ -30,6 +32,8 @@ public:
         accel = { 0,0 };
         maxSpeed = 0;
         name = n;
+        angularVel = Normalize(Vector2{ 15, 0 });
+        linearVel;
     }
 
     void Update()
@@ -91,6 +95,14 @@ public:
         return name;
     }
 
+    void setAngularVel(Vector2 v)
+    {
+        angularVel = v;
+    }
+    Vector2 getAngularVel()
+    {
+        return  angularVel;
+    }
 
      
 };
@@ -103,6 +115,7 @@ Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& ta
     Vector2 toTarget = Normalize(targetDistance);
     Vector2 desiredVel = toTarget * desiredSpeed;
     Vector2 deltaVel = desiredVel - agentVel;
+
     Vector2 outputAccel = Normalize(deltaVel) * accel;
   
     return outputAccel;
@@ -125,7 +138,7 @@ Vector2 centripetalAccel(Vector2 v, float ac, bool clockwise)
     float angle;
     if (clockwise) angle = 90 * DEG2RAD;
     else angle = -90 * DEG2RAD;
-    return Rotate(Normalize(v), angle);
+    return Rotate(Normalize(v), angle)*ac;
 
 }
 
@@ -152,6 +165,8 @@ int main(void)
     Vector2 point;
     Vector2 TurnAngle ={ 175,0 };
    Vector2 Forward;
+   Color rightWhiskerColor = RED;
+   Color leftWhiskerColor = RED;
     std::vector<Rigidbody*> Birds;
   //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE,"Blue"));
   //  Birds.push_back(new Rigidbody(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, ORANGE, "Orange"));
@@ -170,7 +185,9 @@ int main(void)
     while (!WindowShouldClose())
     {
         const float dt = GetFrameTime();
-       
+        Player.setAccel({ 0,0 });
+
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawText("Hello World!", 16, 9, 20, RED);
@@ -277,8 +294,8 @@ int main(void)
       //  TurnAngle
         float ForwardAngle = atan2f(Player.getVel().y , Player.getVel().x );
         Vector2 Forward = Normalize(Rotate(defaultNormal, ForwardAngle));
-        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25*DEG2RAD));
-        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
+        Vector2 WhiskerRight = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25*DEG2RAD));
+        Vector2 WhiskerLeft = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
 
 
         point = NearestPoint(Player.getPos(), { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, Obstacle1.getPos());
@@ -287,7 +304,7 @@ int main(void)
         Vector2 RoateFromRight((Rotate(Player.getVel(), 1 * DEG2RAD)));
         Vector2 RoateFromLeft((Rotate(Player.getVel(), -1 * DEG2RAD)));
 
-        Player.Update();
+       
     //    DrawRectangle(Player.getPos().x, Player.getPos().y, 50, 50, Player.getColor());
    
         if (IsKeyPressed(KEY_H))
@@ -311,18 +328,25 @@ int main(void)
         {
          //   std::cout << "P  " << point.x << "||" << point.y << std::endl;
         }
-        if (CheckCollisionLineCircle(Player.getPos(), pointRight, Obstacle1.getPos(), 25))
+        rightWhiskerColor = RED;
+        leftWhiskerColor = RED;
+        if (CheckCollisionLineCircle(Player.getPos(), pointLeft, Obstacle1.getPos(), 25))
         {
          //   Player.setVel(Vector2(Rotate(Player.getVel(), 15 * DEG2RAD)));
           //   TurnAngle = Rotate(TurnAngle, 5 * DEG2RAD);
-            Player.setVel(centripetalAccel(Player.getVel(), ac, true));
+            Player.setAccel(Player.getAccel()+(centripetalAccel(Player.getVel(), ac, true)));
+            leftWhiskerColor = GREEN;
+           
         }
-        else if (CheckCollisionLineCircle(Player.getPos(), pointLeft, Obstacle1.getPos(), 25))
+        if (CheckCollisionLineCircle(Player.getPos(), pointRight, Obstacle1.getPos(), 25))
         {
          //  Player.setVel(Vector2(Rotate(Player.getVel(), -15 * DEG2RAD)));
            //TurnAngle = Rotate(TurnAngle, -5 * DEG2RAD);
-            Player.setVel(centripetalAccel(Player.getVel(), ac, false));
+            Player.setAccel(Player.getAccel() + (centripetalAccel(Player.getVel(), ac, false)));
+            rightWhiskerColor = GREEN;
         }
+        Player.Update();
+      
         /*
         if (CheckCollisionPointCircle(point, Obstacle1.getPos(), 25))
         {
@@ -339,8 +363,8 @@ int main(void)
         // DrawLineV({ 0,0 }, GetMousePosition(), BLUE);
         // DrawLineV({ 0,0 }, { (Forward.x * 100),(Forward.y * 100) }, RED);
         DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150) }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150) }, RED);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerLeft.x * 150) ,(Player.getPos().y + WhiskerLeft.y * 150) }, leftWhiskerColor);
+        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + WhiskerRight.x * 150) ,(Player.getPos().y + WhiskerRight.y * 150) }, rightWhiskerColor);
         DrawLineV({ Player.getPos().x , Player.getPos().y }, GetMousePosition(), BLUE);
         DrawLineV({ Player.getPos().x , Player.getPos().y }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y }, GREEN);
 
