@@ -236,11 +236,11 @@ int main(void)
     static bool seeking = false;
     static bool fleeing = false;
     Vector2 rectpos = { (SCREEN_WIDTH / 2 )- 25,(SCREEN_HEIGHT / 2 )-25};
-    Vector2 targetDistance;
-    Vector2 tDNormal;
+ 
+ 
     Color circleColor = RED;
     Vector2 pOffset = { 25,25 };
-    Vector2 point;
+ 
     Vector2 TurnAngle ={ 175,0 };
     Vector2 Forward = { 0,0 };
    Color rightWhiskerColor = RED;
@@ -272,16 +272,7 @@ int main(void)
         if (useGUI)
         {
             rlImGuiBegin();
-          
 
-        ImGui::SliderFloat("Obstacle X", &(playerRec.x), 0, SCREEN_WIDTH);
-        ImGui::SliderFloat("Obstacle Y", &(playerRec.y), 0, SCREEN_HEIGHT);
- 
-        Obstacle1.setPos({ playerRec.x,playerRec.y });
-
-
-            ImGui::SliderFloat("Rectangle Vel X", &vel.x, -50, 50);
-            ImGui::SliderFloat("Rectangle Vel Y", &vel.y, -50, 50);
             ImGui::Checkbox("Seek", &seeking);
             //Other seek function that makes them seek towards or flee from the mouse.
             if (seeking)
