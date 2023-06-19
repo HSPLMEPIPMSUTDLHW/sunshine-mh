@@ -21,116 +21,214 @@ Vector2 centripetalAccel(Vector2 v, float ac, bool clockwise)
     return Rotate(Normalize(v), angle) * ac;
 
 }
-//Class for the Rigidbody
 
-class Rigidbody
+
+//Takes the position of the agent, the target, the current velocity of the agent, the max speed and the max acceleration
+// Returns a vector for acceleration that will get the agent to the target that accounts for the current velocity of the agent
+Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
 {
-private:
-    Vector2 position;
-    Vector2 velocity;
-    Vector2 accel; 
-    Vector2 angularVel;
-    float linearVel;
+    Vector2 targetDistance = { targetPos - agentPos };
+    Vector2 toTarget = Normalize(targetDistance);
+    Vector2 desiredVel = toTarget * desiredSpeed;
+    Vector2 deltaVel = desiredVel - agentVel;
+
+    Vector2 outputAccel = Normalize(deltaVel) * accel;
+
+    return outputAccel;
+}
+//Takes everything for seek, but makes the max acceleration negative
+//This causes the agent to accelerate away from the target.
+Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+{
+    return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
+}
+
+Vector2 Arrive(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+{
+    return Seek(agentPos, agentVel, targetPos, desiredSpeed, accel);
+}
+
+//Class for the Agent
+
+struct Rigidbody
+{
+    Vector2 position = { 0 };
+    Vector2 velocity = { 0 };
+    Vector2 accel = { 0 };
+    float width, height, radius;
+    float fowardRad = 0;
+};
+
+struct Obstacle : public Rigidbody
+{
     Color color;
-    float width, height;
-    float maxSpeed;
-    Rectangle dst;
-    Vector2 whiskers[4];
-    Color whiskerColor[4];
-    Vector2 whiskerPoint[4];
-    bool whiskerTouched[4];
-    float ForwardAngle;
-    float avoidencePower;
-    std::string name; // Name is like a tag so I can identify objects if they are in a container
-public:
-    Rigidbody(float x, float y, float w, float h, Color c, std::string n)
+    Obstacle(float x, float y, float w, float h, Color c)
     {
         color = c;
-        dst = { x,y,w,h};
         position = { x,y };
         velocity = { 0,0 };
         accel = { 0,0 };
-        maxSpeed = 0;
+        height = h;
+        width = w;
+        radius = h/2;
+ 
+    }
+    void Draw()
+    {
+        DrawCircle(position.x, position.y, radius, color);
+    }
+};
+
+struct Whisker
+{
+    Vector2 length = { 0 };
+    Vector2 point = { 0 };
+    Color whiskerColor = GREEN;
+    bool touched;
+};
+
+enum Behavior
+{
+    IDLE = 0,
+    SEEK,
+    FLEE,
+    ARRIVE,
+    AVOID,
+    Count
+};
+
+class Agent : public Rigidbody
+{
+private:
+    Color color;
+    float maxSpeed;
+    float maxAccel;
+    float radar;
+    Texture2D sprite;
+    Whisker whiskers[4];
+    float ForwardAngle;
+    float avoidencePower;
+    Behavior behavior;
+    Vector2 targetPos;
+    std::string name; // Name is like a tag so I can identify objects if they are in a container
+public:
+    Agent(float x, float y, float w, float h, Color c, std::string n)
+    {
+        color = c;
+        sprite.height = h;
+        sprite.width = w;
+        height = h;
+        width = w;
+        radius = h / 2;
+        radar = 200;
+        position = { x,y };
+        velocity = { 0,0 };
+        accel = { 0,0 };
+        maxSpeed = 100;
+        maxAccel = 300;
         name = n;
-        angularVel = Normalize(Vector2{ 15, 0 });
-        linearVel;
+
         for (int i = 0; i < 4; i++)
         {
-            whiskerColor[i] = GREEN;
-            whiskerTouched[i] = false;
-
+            whiskers[i].whiskerColor = GREEN;
+            whiskers[i].touched = false;
         }
        
         
         avoidencePower = 2;
     }
 
-
-    
+    void Draw()
+    {
+        DrawCircle(position.x, position.y, radius, color);
+        for (int i = 0; i < 4; i++)
+        {
+            DrawLineV({ position.x , position.y }, (position + getWhiskerPos(i) * 150), getWhiskerColor(i));
+        }
+    }
     void Update()
     {
         //When update is called,
        const float dt = GetFrameTime();
        ForwardAngle = atan2f(getVel().y, getVel().x);
-    //   Vector2 Forward = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle));
-       whiskers[0] = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25 * DEG2RAD));
-       whiskers[1] = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
-       whiskers[2] = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 80 * DEG2RAD));
-       whiskers[3] = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 80 * DEG2RAD));
+       whiskers[0].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25 * DEG2RAD));
+       whiskers[1].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
+       whiskers[2].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 80 * DEG2RAD));
+       whiskers[3].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 80 * DEG2RAD));
        for (int i = 0; i < 4; i++)
        {
-           whiskerTouched[i] = false;
+           whiskers[i].touched = false;
        }
        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
         if (currentspeed > maxSpeed)
         {
             velocity = (Scale(velocity, (maxSpeed / currentspeed)));
         }
+        switch (behavior)
+        { 
+        case IDLE:
+        break;
+        case SEEK:
+            targetPos = GetMousePosition();
+            addSeek(targetPos);
+        break;
+        case FLEE:
+            targetPos = GetMousePosition();
+            addFlee(targetPos);
+        break;
+        case ARRIVE:
+            targetPos = GetMousePosition();
+            addArrive(targetPos);
+            break;
+        default:
+        break;
+        }
         position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
         velocity = velocity + accel * dt;
+    }
+
+    void addSeek(Vector2 target)
+    {
+        accel = accel + Seek(position, velocity, target, maxSpeed, maxAccel);
+    }
+    void addFlee(Vector2 target)
+    {
+        accel = accel + Flee(position, velocity, target, maxSpeed, maxAccel);
+    }
+    void addArrive(Vector2 target)
+    {
+        accel = (accel + Arrive(position, velocity, target, maxSpeed, maxAccel));
     }
 
     void CollisionAvoidence(Vector2 obs,float w, float ac)
     {
         Vector2 relative = { 1, 0 };
-
         for (int i = 0; i < 4; i++)
         {
-
-            Vector2 point = NearestPoint(getPos(),{ (getPos().x + whiskers[i].x * 150) ,(getPos().y + whiskers[i].y * 150) },obs);
-            Vector2 relativeWhisker = Normalize(Rotate(whiskers[i], -ForwardAngle));
-            whiskerColor[i] = GREEN;
-            if (!whiskerTouched[i])
-            {
-
-        
-            if (CheckCollisionLineCircle(getPos(), point, obs, 25))
-            {
-                whiskerColor[i] = RED;
-                whiskerTouched[i] = true;
-                if (atan2f(relativeWhisker.y, relativeWhisker.x) > 0)
+            Vector2 point = NearestPoint(getPos(), { (getPos().x + whiskers[i].length.x * 150) ,(getPos().y + whiskers[i].length.y * 150)}, obs);
+            Vector2 relativeWhisker = Normalize(Rotate(whiskers[i].length, -ForwardAngle));
+            whiskers[i].whiskerColor = GREEN;
+            if (!whiskers[i].touched)
+            {     
+                if (CheckCollisionLineCircle(getPos(), point, obs, 25))
                 {
-                    std::cout << "WHISKER False " << (atan2f(relativeWhisker.y, relativeWhisker.x)) * RAD2DEG << "|| " << ForwardAngle * RAD2DEG << "|| " << (atan2f(relativeWhisker.y, relativeWhisker.x) - sqrt(ForwardAngle * ForwardAngle)) * RAD2DEG << std::endl;
-                    setAccel(getAccel() + (centripetalAccel(getVel(), ac, false) * avoidencePower));
+                    whiskers[i].whiskerColor = RED;
+                    whiskers[i].touched = true;
+                    if (atan2f(relativeWhisker.y, relativeWhisker.x) > 0)
+                    {                      
+                        setAccel(getAccel() + (centripetalAccel(getVel(), ac, false) * avoidencePower));
+                    }
+                    else
+                    {
+                        setAccel(getAccel() + (centripetalAccel(getVel(), ac, true) * avoidencePower));
+                    }
                 }
-                else
-                {
-
-                    std::cout << "WHISKER True  " << (atan2f(relativeWhisker.y, relativeWhisker.x)) * RAD2DEG << "|| " << ForwardAngle * RAD2DEG << "|| " << (atan2f(relativeWhisker.y, relativeWhisker.x) - sqrt(ForwardAngle * ForwardAngle)) * RAD2DEG << std::endl;
-                    setAccel(getAccel() + (centripetalAccel(getVel(), ac, true) * avoidencePower));
-                }
-            }
-
             }
             else
             {
-                whiskerColor[i] = RED;
-            }
-            //    std::cout << "WHISKER " << atan2f(whiskers[i].y, whiskers[i].x) << std::endl;
-      
-        }
-        
-
+                whiskers[i].whiskerColor = RED;
+            }    
+        }    
     }
 
     void setAccel(Vector2 a)
@@ -161,6 +259,14 @@ public:
     {
         maxSpeed = m;
     }
+    void setMaxAccel(float a)
+    {
+        maxAccel = a;
+    }
+    float getMaxAccel()
+    {
+        return maxAccel;
+    }
     float getHeight()
     {
         return height;
@@ -179,44 +285,21 @@ public:
         return name;
     }
 
-    void setAngularVel(Vector2 v)
-    {
-        angularVel = v;
-    }
-    Vector2 getAngularVel()
-    {
-        return  angularVel;
-    }
     Vector2 getWhiskerPos(int w)
     {
-        return whiskers[w];
+        return whiskers[w].length;
     }
     Color  getWhiskerColor(int w)
     {
-        return whiskerColor[w];
+        return whiskers[w].whiskerColor;
+    }
+    void setBehavior(Behavior b)
+    {
+        behavior = b;
     }
      
 };
 
-//Takes the position of the agent, the target, the current velocity of the agent, the max speed and the max acceleration
-// Returns a vector for acceleration that will get the agent to the target that accounts for the current velocity of the agent
-Vector2 Seek(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
-{
-    Vector2 targetDistance = { targetPos-agentPos };
-    Vector2 toTarget = Normalize(targetDistance);
-    Vector2 desiredVel = toTarget * desiredSpeed;
-    Vector2 deltaVel = desiredVel - agentVel;
-
-    Vector2 outputAccel = Normalize(deltaVel) * accel;
-  
-    return outputAccel;
-}
-//Takes everything for seek, but makes the max acceleration negative
-//This causes the agent to accelerate away from the target.
-Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
-{   
-    return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
-}
 
 
 
@@ -239,23 +322,17 @@ int main(void)
  
  
     Color circleColor = RED;
-    Vector2 pOffset = { 25,25 };
- 
-    Vector2 TurnAngle ={ 175,0 };
-    Vector2 Forward = { 0,0 };
-   Color rightWhiskerColor = RED;
-   Color leftWhiskerColor = RED;
-    std::vector<Rigidbody*> Obstacles;
+
+    std::vector<Obstacle*> Obstacles;
  
 
-    Rigidbody Player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, "Blue");
-    Rigidbody Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
+    Agent Player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, "Blue");
+   // Agent Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
    
 
-    Rectangle playerRec{ Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50 };
+   // Rectangle playerRec{ Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50 };
     static Vector2 vel = { 0,0 };
     static Vector2 accel = { 0,0 };
-    static Vector2 vec1 = { playerRec.x, playerRec.y };
     static float maxSpeed = 20;
     float ac = 0;
     int flee = 1;
@@ -271,6 +348,7 @@ int main(void)
         if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
         if (useGUI)
         {
+           
             rlImGuiBegin();
 
             ImGui::Checkbox("Seek", &seeking);
@@ -282,37 +360,42 @@ int main(void)
                 if (!fleeing)
                 { 
                     /*
-                    for (const auto Rigidbody : Birds)
+                    for (const auto Agent : Birds)
                     {
-                        Rigidbody->setAccel(Seek(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                        Agent->setAccel(Seek(Agent->getPos(), Agent->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                     */
-                    Player.setAccel(Seek(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
+                    Player.setBehavior(ARRIVE);
                 }
                 else
                 {
                     /*
-                    for (const auto Rigidbody : Birds)
+                    for (const auto Agent : Birds)
                     {
-                        Rigidbody->setAccel(Flee(Rigidbody->getPos(), Rigidbody->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
+                        Agent->setAccel(Flee(Agent->getPos(), Agent->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
                     }
                     */
-                    Player.setAccel(Flee(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
+                   // Player.setAccel(Flee(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
+                    Player.setBehavior(FLEE);
                 }
   
 
 
             }
+            else
+            {
+                Player.setBehavior(IDLE);
+            }
             ImGui::SliderFloat("Seek Accel", &ac, 0, 500); // The max acceleration
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
             /*
-            for (const auto Rigidbody : Birds)
+            for (const auto Agent : Birds)
             {
-                Rigidbody->setMaxSpeed(maxSpeed);
+                Agent->setMaxSpeed(maxSpeed);
             }
             */
             Player.setMaxSpeed(maxSpeed);
-
+            Player.setMaxAccel(ac);
             if (ImGui::Button("Reset Vel/Accel"))
             {
 
@@ -330,7 +413,7 @@ int main(void)
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            Obstacles.push_back(new Rigidbody(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK, ""));
+          //  Obstacles.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK));
         }
     
 
@@ -350,9 +433,9 @@ int main(void)
  
  
 
-        for (auto Rigidbody : Obstacles)
+        for (auto obst : Obstacles)
         {
-            Player.CollisionAvoidence(Rigidbody->getPos(), 25, ac);
+            Player.CollisionAvoidence(obst->position, 25, ac);
         }
 
         Player.Update();
@@ -363,24 +446,20 @@ int main(void)
             std::cout << "P  " << point.x << "||" << point.y  << std::endl;
         }
         */
-        DrawCircle(Player.getPos().x, Player.getPos().y, 25, Player.getColor());
-        DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
+
+        //DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
         for (auto obst : Obstacles)
         {
-            DrawCircle(obst->getPos().x, obst->getPos().y, 25, obst->getColor());
+            obst->Draw();
         }
 
-        DrawLineV({ 100,600 }, { 200,600 }, GREEN);
-        DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, defaultAngle, ORANGE);
+      //  DrawLineV({ 100,600 }, { 200,600 }, GREEN);
+       // DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
+    //    DrawLineV({ Player.getPos().x , Player.getPos().y }, defaultAngle, ORANGE);
  
 
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, RED);
-
-        for (int i = 0; i < 4; i++)
-        {
-            DrawLineV({ Player.getPos().x , Player.getPos().y }, (Player.getPos() + Player.getWhiskerPos(i) * 150), Player.getWhiskerColor(i));
-        }
+    //    DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, RED);
+        Player.Draw();
      
         DrawLineV({ Player.getPos().x , Player.getPos().y }, GetMousePosition(), BLUE);
         DrawLineV({ Player.getPos().x , Player.getPos().y }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y }, GREEN);
