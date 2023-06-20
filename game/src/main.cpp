@@ -43,9 +43,23 @@ Vector2 Flee(const Vector2& agentPos, const Vector2& agentVel, const Vector2& ta
     return Seek(agentPos, agentVel, targetPos, desiredSpeed, -accel);
 }
 
-Vector2 Arrive(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos, const float desiredSpeed, const float accel)
+Vector2 Arrive(const Vector2& agentPos, const Vector2& agentVel, const Vector2& targetPos,  float desiredSpeed, const float accel, float slowingRadius)
 {
-    return Seek(agentPos, agentVel, targetPos, desiredSpeed, accel);
+
+    Vector2 targetDistance = { targetPos - agentPos };
+    Vector2 toTarget = Normalize(targetDistance);
+
+    Vector2 desiredVel = toTarget * desiredSpeed;
+    if (sqrt(LengthSqr(targetDistance)) < slowingRadius)
+    {
+        std::cout << sqrt(LengthSqr(targetDistance)) << std::endl;
+        desiredVel = desiredVel * ((LengthSqr(targetDistance)) / slowingRadius);
+    }
+    Vector2 deltaVel = desiredVel - agentVel;
+
+    Vector2 outputAccel = Normalize(deltaVel) * accel;
+
+    return outputAccel;
 }
 
 //Class for the Agent
@@ -106,10 +120,12 @@ private:
     float radar;
     Texture2D sprite;
     Whisker whiskers[4];
+    float whiskerLength = 200;
     float ForwardAngle;
     float avoidencePower;
     Behavior behavior;
     Vector2 targetPos;
+    float arriveaccelmod;
     std::string name; // Name is like a tag so I can identify objects if they are in a container
 public:
     Agent(float x, float y, float w, float h, Color c, std::string n)
@@ -127,7 +143,7 @@ public:
         maxSpeed = 100;
         maxAccel = 300;
         name = n;
-
+        
         for (int i = 0; i < 4; i++)
         {
             whiskers[i].whiskerColor = GREEN;
@@ -143,7 +159,8 @@ public:
         DrawCircle(position.x, position.y, radius, color);
         for (int i = 0; i < 4; i++)
         {
-            DrawLineV({ position.x , position.y }, (position + getWhiskerPos(i) * 150), getWhiskerColor(i));
+            DrawLineV({ position.x , position.y }, (position + getWhiskerPos(i) * whiskerLength), getWhiskerColor(i));
+            DrawCircleLines(position.x, position.y, radar, GREEN);
         }
     }
     void Update()
@@ -151,14 +168,15 @@ public:
         //When update is called,
        const float dt = GetFrameTime();
        ForwardAngle = atan2f(getVel().y, getVel().x);
-       whiskers[0].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 25 * DEG2RAD));
-       whiskers[1].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 25 * DEG2RAD));
-       whiskers[2].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle + 80 * DEG2RAD));
-       whiskers[3].length = Normalize(Rotate(Vector2{ 175,0 }, ForwardAngle - 80 * DEG2RAD));
+       whiskers[0].length = Normalize(Rotate(Vector2{ whiskerLength,0 }, ForwardAngle + 5 * DEG2RAD));
+       whiskers[1].length = Normalize(Rotate(Vector2{ whiskerLength,0 }, ForwardAngle - 5 * DEG2RAD));
+       whiskers[2].length = Normalize(Rotate(Vector2{ whiskerLength,0 }, ForwardAngle + 15 * DEG2RAD));
+       whiskers[3].length = Normalize(Rotate(Vector2{ whiskerLength,0 }, ForwardAngle - 15 * DEG2RAD));
        for (int i = 0; i < 4; i++)
        {
            whiskers[i].touched = false;
        }
+       
        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
         if (currentspeed > maxSpeed)
         {
@@ -179,6 +197,18 @@ public:
         case ARRIVE:
             targetPos = GetMousePosition();
             addArrive(targetPos);
+            
+       
+            if (sqrt(LengthSqr(position - targetPos)) < radar)
+            {
+            //    arriveaccelmod = 1 - sqrt(LengthSqr(position - targetPos) / radar);
+                //std::cout << sqrt(LengthSqr(position - targetPos)) << std::endl;
+            }
+            if (sqrt(LengthSqr(position-targetPos)) < 10)
+            {
+                //   std::cout << sqrt(LengthSqr(targetDistance)) << std::endl;
+             //   velocity = velocity * 0;
+            }
             break;
         default:
         break;
@@ -197,7 +227,9 @@ public:
     }
     void addArrive(Vector2 target)
     {
-        accel = (accel + Arrive(position, velocity, target, maxSpeed, maxAccel));
+        accel = (accel + Arrive(position, velocity, target, maxSpeed, maxAccel,radar));
+
+
     }
 
     void CollisionAvoidence(Vector2 obs,float w, float ac)
@@ -205,7 +237,7 @@ public:
         Vector2 relative = { 1, 0 };
         for (int i = 0; i < 4; i++)
         {
-            Vector2 point = NearestPoint(getPos(), { (getPos().x + whiskers[i].length.x * 150) ,(getPos().y + whiskers[i].length.y * 150)}, obs);
+            Vector2 point = NearestPoint(getPos(), { (getPos().x + whiskers[i].length.x * whiskerLength) ,(getPos().y + whiskers[i].length.y * whiskerLength)}, obs);
             Vector2 relativeWhisker = Normalize(Rotate(whiskers[i].length, -ForwardAngle));
             whiskers[i].whiskerColor = GREEN;
             if (!whiskers[i].touched)
@@ -318,6 +350,7 @@ int main(void)
     bool useGUI = false;
     static bool seeking = false;
     static bool fleeing = false;
+    static int agentBehavior;
     Vector2 rectpos = { (SCREEN_WIDTH / 2 )- 25,(SCREEN_HEIGHT / 2 )-25};
  
  
@@ -351,33 +384,15 @@ int main(void)
            
             rlImGuiBegin();
 
-            ImGui::Checkbox("Seek", &seeking);
+            ImGui::Checkbox("Enable Behavior", &seeking);
             //Other seek function that makes them seek towards or flee from the mouse.
             if (seeking)
             {
-            
-                ImGui::Checkbox("Fleeing", &fleeing);
-                if (!fleeing)
-                { 
-                    /*
-                    for (const auto Agent : Birds)
-                    {
-                        Agent->setAccel(Seek(Agent->getPos(), Agent->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
-                    }
-                    */
-                    Player.setBehavior(ARRIVE);
-                }
-                else
-                {
-                    /*
-                    for (const auto Agent : Birds)
-                    {
-                        Agent->setAccel(Flee(Agent->getPos(), Agent->getVel(), GetMousePosition() - pOffset, maxSpeed, ac));
-                    }
-                    */
-                   // Player.setAccel(Flee(Player.getPos(), Player.getVel(), (GetMousePosition()), maxSpeed, ac));
-                    Player.setBehavior(FLEE);
-                }
+                
+                ImGui::RadioButton("Seek",&agentBehavior,SEEK);
+                ImGui::RadioButton("Flee", &agentBehavior, FLEE);
+                ImGui::RadioButton("Arrive", &agentBehavior, ARRIVE);
+                Player.setBehavior(static_cast<Behavior>(agentBehavior));
   
 
 
@@ -396,24 +411,17 @@ int main(void)
             */
             Player.setMaxSpeed(maxSpeed);
             Player.setMaxAccel(ac);
-            if (ImGui::Button("Reset Vel/Accel"))
-            {
 
-                vel = { 0,0 }; 
-                accel = { 0,0 };
-            }
-            if (ImGui::Button("Reset Position"))
-            {
-        
-            }
             rlImGuiEnd();
  
 
         }
-
+        if (IsKeyPressed(KEY_ONE)) agentBehavior = SEEK;
+        if (IsKeyPressed(KEY_TWO)) agentBehavior = FLEE;
+        if (IsKeyPressed(KEY_THREE)) agentBehavior = ARRIVE;
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-          //  Obstacles.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK));
+          Obstacles.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK));
         }
     
 
