@@ -4,8 +4,8 @@
  
 #include <vector>
 #include <string>
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 900
 
 bool CheckCollisionLineCircle(Vector2 lineStart, Vector2 lineEnd, Vector2 circlePosition, float circleRadius)
 {
@@ -52,8 +52,8 @@ Vector2 Arrive(const Vector2& agentPos, const Vector2& agentVel, const Vector2& 
     Vector2 desiredVel = toTarget * desiredSpeed;
     if (sqrt(LengthSqr(targetDistance)) < slowingRadius)
     {
-        std::cout << sqrt(LengthSqr(targetDistance)) << std::endl;
-        desiredVel = desiredVel * ((LengthSqr(targetDistance)) / slowingRadius);
+     
+        desiredVel = desiredVel * (sqrt(LengthSqr(targetDistance)) / slowingRadius);
     }
     Vector2 deltaVel = desiredVel - agentVel;
 
@@ -70,7 +70,7 @@ struct Rigidbody
     Vector2 velocity = { 0 };
     Vector2 accel = { 0 };
     float width, height, radius;
-    float fowardRad = 0;
+   // float fowardRad = 0;
 };
 
 struct Obstacle : public Rigidbody
@@ -86,6 +86,27 @@ struct Obstacle : public Rigidbody
         width = w;
         radius = h/2;
  
+    }
+    void Draw()
+    {
+        DrawCircle(position.x, position.y, radius, color);
+    }
+};
+
+struct Food : public Rigidbody
+{
+    int HP = 100;
+    Color color;
+    Food(float x, float y, float w, float h, Color c)
+    {
+        color = c;
+        position = { x,y };
+        velocity = { 0,0 };
+        accel = { 0,0 };
+        height = h;
+        width = w;
+        radius = h / 2;
+
     }
     void Draw()
     {
@@ -127,6 +148,7 @@ private:
     Vector2 targetPos;
     float arriveaccelmod;
     std::string name; // Name is like a tag so I can identify objects if they are in a container
+ 
 public:
     Agent(float x, float y, float w, float h, Color c, std::string n)
     {
@@ -140,8 +162,8 @@ public:
         position = { x,y };
         velocity = { 0,0 };
         accel = { 0,0 };
-        maxSpeed = 100;
-        maxAccel = 300;
+        maxSpeed = 400;
+        maxAccel = 600;
         name = n;
         
         for (int i = 0; i < 4; i++)
@@ -156,12 +178,18 @@ public:
 
     void Draw()
     {
-        DrawCircle(position.x, position.y, radius, color);
+       // DrawCircle(position.x, position.y, radius, color);
+        Rectangle src = { 0,0,sprite.width, sprite.height };
+        Rectangle dst = { position.x, position.y, sprite.width, sprite.height };
+        DrawTexturePro(sprite, src, dst, { static_cast<float>(sprite.width)  , static_cast<float>(sprite.height) }, ForwardAngle * RAD2DEG, { 25,25,55 });
         for (int i = 0; i < 4; i++)
         {
+           
             DrawLineV({ position.x , position.y }, (position + getWhiskerPos(i) * whiskerLength), getWhiskerColor(i));
-            DrawCircleLines(position.x, position.y, radar, GREEN);
+          
+
         }
+        DrawCircleLines(position.x, position.y, radar, GREEN);
     }
     void Update()
     {
@@ -177,44 +205,36 @@ public:
            whiskers[i].touched = false;
        }
        
-       float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
+     
+       if (behavior == SEEK)
+       {
+           targetPos = GetMousePosition();
+           addSeek(targetPos);
+       }
+        position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
+        velocity = velocity + accel * dt;
+        float currentspeed = sqrt((velocity.x * velocity.x) + (velocity.y * velocity.y));
         if (currentspeed > maxSpeed)
         {
             velocity = (Scale(velocity, (maxSpeed / currentspeed)));
         }
-        switch (behavior)
-        { 
-        case IDLE:
-        break;
-        case SEEK:
-            targetPos = GetMousePosition();
-            addSeek(targetPos);
-        break;
-        case FLEE:
-            targetPos = GetMousePosition();
-            addFlee(targetPos);
-        break;
-        case ARRIVE:
-            targetPos = GetMousePosition();
-            addArrive(targetPos);
-            
-       
-            if (sqrt(LengthSqr(position - targetPos)) < radar)
-            {
-            //    arriveaccelmod = 1 - sqrt(LengthSqr(position - targetPos) / radar);
-                //std::cout << sqrt(LengthSqr(position - targetPos)) << std::endl;
-            }
-            if (sqrt(LengthSqr(position-targetPos)) < 10)
-            {
-                //   std::cout << sqrt(LengthSqr(targetDistance)) << std::endl;
-             //   velocity = velocity * 0;
-            }
-            break;
-        default:
-        break;
+        if (position.x > SCREEN_WIDTH+25)
+        {
+            position.x = 0;
         }
-        position = position + (velocity * dt) + (accel * 0.5f * dt * dt);
-        velocity = velocity + accel * dt;
+        if (position.x < -25)
+        {
+            position.x = SCREEN_WIDTH;
+        }
+        if (position.y > SCREEN_HEIGHT + 25)
+        {
+            position.y = 0;
+        }
+        if (position.y < -25)
+        {
+            position.y = SCREEN_HEIGHT;
+        }
+        accel = Vector2Zero();
     }
 
     void addSeek(Vector2 target)
@@ -228,9 +248,8 @@ public:
     void addArrive(Vector2 target)
     {
         accel = (accel + Arrive(position, velocity, target, maxSpeed, maxAccel,radar));
-
-
     }
+    
 
     void CollisionAvoidence(Vector2 obs,float w, float ac)
     {
@@ -307,7 +326,14 @@ public:
     {
         return width;
     }
-
+    float getRadius()
+    {
+        return radius;
+    }
+    float getRadar()
+    {
+        return radar;
+    }
     Color getColor()
     {
         return color;
@@ -328,6 +354,18 @@ public:
     void setBehavior(Behavior b)
     {
         behavior = b;
+    }
+    void setTexture(const char* t)
+    {
+        sprite = LoadTexture(t);
+    }
+    bool radarDetection(Vector2 ob, float rad)
+    {
+        if (sqrt(LengthSqr(position - ob)) < rad)
+        {
+            return true;
+        }
+        else return false;
     }
      
 };
@@ -356,14 +394,21 @@ int main(void)
  
     Color circleColor = RED;
 
+    std::vector<Agent*> Fish;
     std::vector<Obstacle*> Obstacles;
+    std::vector<Food*> Foods;
+    std::vector<Obstacle*> Predator;
+
+    
  
-
-    Agent Player(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, "Blue");
-   // Agent Obstacle1(((SCREEN_WIDTH / 8) - 25), ((SCREEN_HEIGHT / 4) - 25), 50, 50, BLACK,"");
-   
-
-   // Rectangle playerRec{ Obstacle1.getPos().x, Obstacle1.getPos().y, 50, 50 };
+    Fish.push_back(new Agent(((SCREEN_WIDTH / 2) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, ""));
+    Fish.push_back(new Agent(((SCREEN_WIDTH / 3) - 25), ((SCREEN_HEIGHT / 3) - 25), 50, 50, BLUE, ""));
+    Fish.push_back(new Agent(((SCREEN_WIDTH / 6) - 25), ((SCREEN_HEIGHT / 2) - 25), 50, 50, BLUE, ""));
+    for (auto f : Fish)
+    {
+         f->setTexture("../game/assets/textures/fish.png");
+    }
+ 
     static Vector2 vel = { 0,0 };
     static Vector2 accel = { 0,0 };
     static float maxSpeed = 20;
@@ -372,12 +417,12 @@ int main(void)
     while (!WindowShouldClose())
     {
         const float dt = GetFrameTime();
-        Player.setAccel({ 0,0 });
+       // Player.setAccel({ 0,0 });
 
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawText("Hello World!", 16, 9, 20, RED);
+ 
         if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
         if (useGUI)
         {
@@ -392,25 +437,26 @@ int main(void)
                 ImGui::RadioButton("Seek",&agentBehavior,SEEK);
                 ImGui::RadioButton("Flee", &agentBehavior, FLEE);
                 ImGui::RadioButton("Arrive", &agentBehavior, ARRIVE);
-                Player.setBehavior(static_cast<Behavior>(agentBehavior));
+                ImGui::RadioButton("Arrive", &agentBehavior, AVOID);
+  //              Player.setBehavior(static_cast<Behavior>(agentBehavior));
   
 
 
             }
             else
             {
-                Player.setBehavior(IDLE);
+               // Player.setBehavior(IDLE);
             }
             ImGui::SliderFloat("Seek Accel", &ac, 0, 500); // The max acceleration
             ImGui::SliderFloat("Max Speed", &maxSpeed, 0, 500);
-            /*
-            for (const auto Agent : Birds)
+       
+            for (const auto Agent : Fish)
             {
                 Agent->setMaxSpeed(maxSpeed);
+                Agent->setMaxAccel(ac);
             }
-            */
-            Player.setMaxSpeed(maxSpeed);
-            Player.setMaxAccel(ac);
+           
+
 
             rlImGuiEnd();
  
@@ -419,10 +465,21 @@ int main(void)
         if (IsKeyPressed(KEY_ONE)) agentBehavior = SEEK;
         if (IsKeyPressed(KEY_TWO)) agentBehavior = FLEE;
         if (IsKeyPressed(KEY_THREE)) agentBehavior = ARRIVE;
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsKeyPressed(KEY_FOUR)) agentBehavior = AVOID;
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && agentBehavior == 2)
         {
-          Obstacles.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK));
+            Predator.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, GRAY));
         }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)&&agentBehavior == 3)
+        {
+          Foods.push_back(new Food(GetMousePosition().x, GetMousePosition().y, 50, 50, BROWN));
+        }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && agentBehavior == 4)
+        {
+            Obstacles.push_back(new Obstacle(GetMousePosition().x, GetMousePosition().y, 50, 50, BLACK));
+        }
+
     
 
         if (IsKeyDown(KEY_G))
@@ -430,23 +487,48 @@ int main(void)
             std::cout << "dt " << dt << std::endl;
         }
 
-        if (CheckCollisionCircleRec(GetMousePosition(), 20, { Player.getPos().x,  Player.getPos().y, Player.getWidth(), Player.getHeight() }))
-            circleColor = PINK;
-        else
-            circleColor = RED;
- 
-        Vector2 playerPosOffset = { Player.getPos().x + 25,Player.getPos().y + 25 };
-        Vector2 defaultAngle = { 150 + Player.getPos().x   ,Player.getPos().y    };
-        Vector2 defaultNormal = Vector2{ 175,0 };
- 
- 
 
-        for (auto obst : Obstacles)
+
+        for (const auto Agent : Fish)
         {
-            Player.CollisionAvoidence(obst->position, 25, ac);
-        }
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && agentBehavior == SEEK)
+            {
 
-        Player.Update();
+                Agent->setBehavior(SEEK);
+            }
+            else Agent->setBehavior(IDLE);
+            for (auto obst : Obstacles)
+            {
+                Agent->CollisionAvoidence(obst->position, 25, ac);
+            }
+            for (auto f : Foods)
+            {
+                if (Agent->radarDetection(f->position, Agent->getRadar()))
+                {
+
+                    Agent->addArrive(f->position);
+                    if (Agent->radarDetection(f->position, Agent->getRadius()))
+                    {
+                        std::cout << "FOOD AT " << f->position.x << "||" << f->position.y << std::endl;
+                        f->HP -= 1;
+                    }
+                }
+
+            }
+            for (auto P : Predator)
+            {
+                if (Agent->radarDetection(P->position, Agent->getRadar()))
+                {
+
+                    Agent->addFlee(P->position);
+                }
+
+            }
+            Agent->Update();
+        }
+    
+
+    
       
         /*
         if (CheckCollisionPointCircle(point, Obstacle1.getPos(), 25))
@@ -454,23 +536,42 @@ int main(void)
             std::cout << "P  " << point.x << "||" << point.y  << std::endl;
         }
         */
-
+        for(int e = 0; e < Foods.size(); e++)
+        {
+            if (Foods[e]->HP <= 0)
+            {
+                delete Foods[e];
+                Foods[e] = nullptr;
+                Foods.erase(Foods.begin() + e);
+                Foods.shrink_to_fit();
+            }
+        }
         //DrawCircle(Obstacle1.getPos().x, Obstacle1.getPos().y, 25, Obstacle1.getColor());
         for (auto obst : Obstacles)
         {
             obst->Draw();
         }
-
+        for (auto f : Foods)
+        {
+            f->Draw();
+        }
+        for (auto P : Predator)
+        {
+            P->Draw();
+        }
       //  DrawLineV({ 100,600 }, { 200,600 }, GREEN);
        // DrawLineV({ 100,600 }, { (200 + Forward.x * 100),(600 + Forward.y * 100) }, RED);
     //    DrawLineV({ Player.getPos().x , Player.getPos().y }, defaultAngle, ORANGE);
  
 
     //    DrawLineV({ Player.getPos().x , Player.getPos().y }, { (Player.getPos().x + Forward.x * 150) ,(Player.getPos().y + Forward.y * 150) }, RED);
-        Player.Draw();
-     
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, GetMousePosition(), BLUE);
-        DrawLineV({ Player.getPos().x , Player.getPos().y }, { Player.getVel().x + Player.getPos().x  ,Player.getVel().y + Player.getPos().y }, GREEN);
+        for (const auto Agent : Fish)
+        {
+            Agent->Draw();
+            DrawLineV({ Agent->getPos().x , Agent->getPos().y }, { Agent->getVel().x + Agent->getPos().x  ,Agent->getVel().y + Agent->getPos().y }, RED);
+        }
+     //   DrawLineV({ Player.getPos().x , Player.getPos().y }, GetMousePosition(), BLUE);
+      
        
         EndDrawing();
         
