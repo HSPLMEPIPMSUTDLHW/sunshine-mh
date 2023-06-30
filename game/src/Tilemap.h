@@ -74,7 +74,7 @@ public:
 		}
 	}
 
-	std::vector<TileCoord> GetAdjacentTiles(TileCoord tileposition)
+	std::vector<TileCoord> GetAdjacentTiles(TileCoord tileposition)//returns the adjacent tiles as a tilcoord
 	{
 		std::vector<TileCoord> adjacentTiles;
 		TileCoord N = tileposition + NORTH;
@@ -87,7 +87,7 @@ public:
 		if (isTileTraversable(W)) adjacentTiles.push_back(W);
 		return adjacentTiles;
 	}
-	std::vector<Vector2> GetAdjacentTilesV(TileCoord tileposition)
+	std::vector<Vector2> GetAdjacentTilesV(TileCoord tileposition)//returns the adjacent tiles as a vector2
 	{
 		std::vector<Vector2> adjacentTiles;
 		TileCoord N = tileposition + NORTH;
@@ -101,7 +101,7 @@ public:
 		return adjacentTiles;
 	}
 
-	bool tileOOB(TileCoord tilepos)
+	bool tileOOB(TileCoord tilepos)//checks if a tile is out of the map bounds
 	{
 		if (tilepos.x < MAP_WIDTH && tilepos.x >= 0 && tilepos.y < MAP_HEIGHT && tilepos.y >= 0)
 		{
@@ -109,7 +109,7 @@ public:
 		}
 		else return true;
 	}
-	bool tileOOBV(TileCoord tilepos)
+	bool tileOOBV(TileCoord tilepos)//checks if the tile is out of the map bounnds but as a vector. I forgot what I used this for but its unused now.
 	{
 		if (tilepos.x < MAP_WIDTH * tileSizeX && tilepos.x >= 0 && tilepos.y < MAP_HEIGHT * tileSizeY && tilepos.y >= 0)
 		{
