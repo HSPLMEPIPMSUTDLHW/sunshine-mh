@@ -47,7 +47,7 @@ int main(void)
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        vector<TileCoord> playerAdjacent = (map.GetAdjacentTiles(player.pos));
+         
         if (IsKeyPressed(KEY_W) && (map.isTileTraversable({ player.pos.x,player.pos.y - 1 })))
         {
             player.pos.y -= 1;
