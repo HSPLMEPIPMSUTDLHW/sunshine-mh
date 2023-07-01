@@ -2,6 +2,7 @@
 #include "Physics.h"
 #include "Collision.h"
 #include "Tilemap.h"
+#include "Pathfinder.h"
 #include <array>
 #include <vector>
 #include <string>
@@ -13,6 +14,8 @@
 #define SCREEN_HEIGHT 720
 
 Tilemap map;
+Pathfinder pathfinder;
+
 using namespace std;
 
 struct tileAgent
@@ -24,7 +27,7 @@ struct tileAgent
     {
         pos = start;
         color = c;
-        height = map.tileSizeX;
+        height = map.GetTileWidth();
 
     }
     
@@ -63,15 +66,38 @@ int main(void)
         {
             player.pos.x += 1;
         }
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+
+        TileCoord mouseTile = map.GetTileAtScreenPos(GetMousePosition());
+        if (map.tileInBounds(mouseTile))
         {
-            TileCoord tile = { GetMousePosition().x / 32,GetMousePosition().y / 32 };
+            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            {
+                pathfinder = Pathfinder(&map, player.pos, TileCoord(mouseTile));
+            }
+
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            {
+                pathfinder = Pathfinder(&map, player.pos, TileCoord(mouseTile));
+                pathfinder.SolvePath();
+            }
+        }
+        if (pathfinder.map != nullptr)
+        {
+            if (IsKeyPressed(KEY_SPACE))
+            {
+                pathfinder.ProcessNextIterationFunctional();
+            }
+            //(drawPath)
+        }
+        /*
+                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && map.isTileTraversable(tile) )
+        {      
             player.pos = tile;
         }
-        map.Draw();
+      
+
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
         {
-            TileCoord tile = { GetMousePosition().x / 32,GetMousePosition().y / 32 };
 
             if (tile.x < MAP_WIDTH && tile.y < MAP_HEIGHT)
             {
@@ -83,7 +109,7 @@ int main(void)
                     vector<TileCoord> adjacent = (map.GetAdjacentTiles(tile));
                     for (auto t : adjacent)
                     {
-                        DrawRectangleV(map.GetScreenPosOfTile(t), { map.tileSizeX, map.tileSizeX }, PINK);
+                        DrawRectangleV(map.GetScreenPosOfTile(t), { map.GetTileWidth(), map.GetTileHeight() }, PINK);
                       //  cout << t.x << " | " << t.y << " [] " << map.GetScreenPosOfTile(tile  ).x << " | " << map.GetScreenPosOfTile(tile  ).y << endl;
                       //  cout << map.GetScreenPosOfTile(tile + NORTH).x << " | " << map.GetScreenPosOfTile(tile + NORTH).y << endl;
                  //       std::cout << t.x << "|" << t.y << " [] ";
@@ -94,7 +120,19 @@ int main(void)
             }
             
         }
+        */
+
+        map.Draw();
         map.DrawPaths();
+        if (IsKeyDown(KEY_E))
+        {
+            
+            std::cout << "yeah " << endl;
+            for (TileCoord pos : map.GetAllTraversableTiles())
+            {
+                DrawRectangleV(map.GetScreenPosOfTile(pos), { map.GetTileWidth(), map.GetTileHeight() }, PINK);
+            }
+        }
         player.Draw();
 
         EndDrawing();

@@ -1,66 +1,95 @@
 #pragma once
-#include "TileCoord.h"
+#include <vector>
 #include "raylib.h"
-#include "rlImGui.h"
-#include <iostream>
-const unsigned int MAP_WIDTH = 28;
-const unsigned int MAP_HEIGHT = 20;
+#include "TileCoord.h"
 
-/*
-const TileCoord NORTH = { -1,0 };
-const TileCoord SOUTH = { 1,0 };
-const TileCoord EAST = { 0,1 };
-const TileCoord WEST = { 0,-1};
-*/
-const TileCoord WEST = { -1,0 };
-const TileCoord EAST = { 1,0 };
-const TileCoord SOUTH = { 0,1 };
-const TileCoord NORTH = { 0,-1};
+#define MAP_WIDTH 20
+#define MAP_HEIGHT 10
 
+const TileCoord NORTH = { 0, -1 };
+const TileCoord SOUTH = { 0,  1 };
+const TileCoord EAST = { 1,  0 };
+const TileCoord WEST = { -1,  0 };
 
-enum Tile
+enum class Tile
 {
-	Floor = 0,
-	Mountain,
-	Water,
-	Wall,
-	Rock,
-	Grass,
-	Count
-		
+	Floor = 0, // Floor tiles can be walked on
+	Wall, // Wall tiles cannot be walked on
+	Count // number of Tile types (i.e. 2)
 };
 
 class Tilemap
 {
-public:
-	float tileSizeX = 32;
-	float tileSizeY = 32;
-	Color tileColors[ (int)Tile::Count ];
-
+private:
+	float tileSizeX = 50;
+	float tileSizeY = 50;
 	Tile tiles[MAP_WIDTH][MAP_HEIGHT];
+public:
 
-	Tilemap()
-	{
-		tileColors[ Floor ] = BEIGE;
-		tileColors[ Grass ] = GREEN;
-		tileColors[ Water ] = BLUE;
-		tileColors[ Wall ] = DARKGRAY;
-		tileColors[Rock] = GRAY;
-		tileColors[ Mountain ]  = LIGHTGRAY;
-	}
 
 	bool isTileTraversable(TileCoord tilePosition)
 	{
 		Tile type = tiles[tilePosition.x][tilePosition.y];
-		if (type == Tile::Floor && !tileOOB(tilePosition)) return true;
+		if (type == Tile::Floor && tileInBounds(tilePosition)) return true;
 		return false;
 		 
 	}
+	size_t GetMapWidth() // get number of columns in the grid
+	{
+		return MAP_WIDTH;
+	}
+
+	size_t GetMapHeight()  // get number of rows in the grid
+	{
+		return MAP_HEIGHT;
+	}
+
+	float GetTileWidth() // get number of columns in the grid
+	{
+		return tileSizeX;
+	}
+
+	float GetTileHeight()  // get number of rows in the grid
+	{
+		return tileSizeY;
+	}
+	Tile GetTile(TileCoord tilePos)
+	{
+		return tiles[tilePos.x][tilePos.y];
+	}
+
+	//void SetTile(TileCoord tilePos, Tile value);  // set the tile at the specified coordinate in the grid
 
 	Vector2 GetScreenPosOfTile(TileCoord tilePosition)
 	{
 		return{ (float)tilePosition.x * tileSizeX, (float)tilePosition.y * tileSizeY };
 
+	}
+	TileCoord GetTileAtScreenPos(Vector2 tilePosition)
+	{
+		return{ tilePosition.x / tileSizeX, tilePosition.y / tileSizeY };
+	}
+
+	int GetCostForTile(TileCoord tilePositon)  // having this function makes it easier to change costs per tile the future
+	{
+		return 1;
+	}
+	//std::vector<TileCoord> GetAllTiles(); // return all tile positions
+
+	std::vector<TileCoord> GetAllTraversableTiles()
+	{
+		std::vector<TileCoord> traversable;
+		for (int x = 0; x < MAP_WIDTH; x++)
+		{
+			for (int y = 0; y < MAP_HEIGHT; y++)
+			{
+				if (isTileTraversable({ x,y }))
+				{
+					traversable.push_back({ x,y });
+				}
+			}
+		}
+		return traversable;
 	}
 
 	void RandomizeTiles()
@@ -69,7 +98,7 @@ public:
 		{ 
 			for (int y = 0; y < MAP_HEIGHT; y++)
 			{
-				tiles[x][y] = (Tile)(rand() % (int)(Tile::Water));
+				tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
 			}
 		}
 	}
@@ -101,21 +130,21 @@ public:
 		return adjacentTiles;
 	}
 
-	bool tileOOB(TileCoord tilepos)//checks if a tile is out of the map bounds
+	bool tileInBounds(TileCoord tilepos)//checks if a tile is out of the map bounds
 	{
 		if (tilepos.x < MAP_WIDTH && tilepos.x >= 0 && tilepos.y < MAP_HEIGHT && tilepos.y >= 0)
 		{
-			return false;
+			return true;
 		}
-		else return true;
+		else return false;
 	}
-	bool tileOOBV(TileCoord tilepos)//checks if the tile is out of the map bounnds but as a vector. I forgot what I used this for but its unused now.
+	bool tileInBoundsV(TileCoord tilepos)//checks if the tile is out of the map bounnds but as a vector. I forgot what I used this for but its unused now.
 	{
 		if (tilepos.x < MAP_WIDTH * tileSizeX && tilepos.x >= 0 && tilepos.y < MAP_HEIGHT * tileSizeY && tilepos.y >= 0)
 		{
-			return false;
+			return true;
 		}
-		else return true;
+		else return false;
 	}
 	void Draw() 
 	{
@@ -127,7 +156,10 @@ public:
 				Tile tile = tiles[x][y];
 				Vector2 position = GetScreenPosOfTile({ x,y });
 				
-				color = tileColors[tile];
+				if (!isTileTraversable({ x,y }))
+				{
+					color = DARKGRAY;
+				}
 				DrawRectangleV(position, { (float)tileSizeX, (float)tileSizeY }, color );
 			}
 		}
@@ -148,7 +180,7 @@ public:
 					for (auto t : adjacent)
 					{
 					 
-						if (!tileOOBV(t)&&(!(t.x < GetScreenPosOfTile(tile).x) || !(t.x < GetScreenPosOfTile(tile).y)))
+						if (tileInBoundsV(t)&&(!(t.x < GetScreenPosOfTile(tile).x) || !(t.x < GetScreenPosOfTile(tile).y)))
 						{
 							DrawLineV(t + offSet, GetScreenPosOfTile(tile) + offSet, LIME);
 						}

@@ -1,6 +1,6 @@
 #pragma once
+#include <algorithm>
 #include "Math.h"
- 
 
 struct TileCoord
 {
