@@ -14,6 +14,7 @@
 #define SCREEN_HEIGHT 720
 
 Tilemap map;
+
 Pathfinder pathfinder;
 
 using namespace std;
@@ -46,6 +47,7 @@ int main(void)
     bool useGUI = false;
     SetTargetFPS(60);
     tileAgent player({ 0,0 },RED);
+    vector<TileCoord> spaceupdate;
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -66,76 +68,79 @@ int main(void)
         {
             player.pos.x += 1;
         }
-
         TileCoord mouseTile = map.GetTileAtScreenPos(GetMousePosition());
+        if (IsKeyDown(KEY_R))
+        {
+            map.SetTile(mouseTile, Tile::Wall);
+
+        }
+
+
+        if (IsKeyDown(KEY_G) && map.isTileTraversable(mouseTile))
+        {
+            player.pos = mouseTile;
+        }
         if (map.tileInBounds(mouseTile))
         {
             if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
             {
+                spaceupdate.clear();
                 pathfinder = Pathfinder(&map, player.pos, TileCoord(mouseTile));
             }
 
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 pathfinder = Pathfinder(&map, player.pos, TileCoord(mouseTile));
                 pathfinder.SolvePath();
+                 
             }
+ 
         }
         if (pathfinder.map != nullptr)
         {
             if (IsKeyPressed(KEY_SPACE))
             {
                 pathfinder.ProcessNextIterationFunctional();
+            //    pathfinder.drawCurrent();
+                spaceupdate.push_back(pathfinder.getCurrent());
+    
             }
-            //(drawPath)
-        }
-        /*
-                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && map.isTileTraversable(tile) )
-        {      
-            player.pos = tile;
-        }
-      
-
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-        {
-
-            if (tile.x < MAP_WIDTH && tile.y < MAP_HEIGHT)
+            if (IsKeyDown(KEY_SPACE))
             {
-                // std::cout << tile.x << " | " << tile.y << std::endl;
-               //  std::cout << map.isTileTraversable(tile)<<std::endl;
-                //std::cout << map.tiles[tile.x][tile.y] << std::endl;
-                if (map.isTileTraversable(tile))
-                {
-                    vector<TileCoord> adjacent = (map.GetAdjacentTiles(tile));
-                    for (auto t : adjacent)
-                    {
-                        DrawRectangleV(map.GetScreenPosOfTile(t), { map.GetTileWidth(), map.GetTileHeight() }, PINK);
-                      //  cout << t.x << " | " << t.y << " [] " << map.GetScreenPosOfTile(tile  ).x << " | " << map.GetScreenPosOfTile(tile  ).y << endl;
-                      //  cout << map.GetScreenPosOfTile(tile + NORTH).x << " | " << map.GetScreenPosOfTile(tile + NORTH).y << endl;
-                 //       std::cout << t.x << "|" << t.y << " [] ";
-                      // cout << map.GetScreenPosOfTile(tile+NORTH).y << " N " << map.GetScreenPosOfTile(tile + SOUTH).y << " S " << map.GetScreenPosOfTile(tile+EAST).x << " E " << map.GetScreenPosOfTile(tile+WEST).x << " W " << endl;
-                    }
-                    // std::cout << std::endl;
-                }
+               
+                pathfinder.drawCurrent();
+          
             }
-            
+            if (pathfinder.IsCompleted())
+            {
+                
+                pathfinder.drawCosts();
+                pathfinder.drawSolution();
+                if (IsKeyDown(KEY_Y))
+                {
+                  //  pathfinder.drawSolution();
+                    
+
+
+                }
+                pathfinder.drawGoal();
+
+            }
+            else
+            {
+                pathfinder.drawCurrent();
+                pathfinder.drawGoal();
+            }
         }
-        */
 
         map.Draw();
-        map.DrawPaths();
-        if (IsKeyDown(KEY_E))
-        {
-            
-            std::cout << "yeah " << endl;
-            for (TileCoord pos : map.GetAllTraversableTiles())
-            {
-                DrawRectangleV(map.GetScreenPosOfTile(pos), { map.GetTileWidth(), map.GetTileHeight() }, PINK);
-            }
-        }
+ 
+ 
+
+  
         player.Draw();
 
-        EndDrawing();
+        EndDrawing(); 
     }
    
 

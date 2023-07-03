@@ -2,9 +2,9 @@
 #include <vector>
 #include "raylib.h"
 #include "TileCoord.h"
-
-#define MAP_WIDTH 20
-#define MAP_HEIGHT 10
+#include <iostream>
+#define MAP_WIDTH 15
+#define MAP_HEIGHT 9
 
 const TileCoord NORTH = { 0, -1 };
 const TileCoord SOUTH = { 0,  1 };
@@ -21,18 +21,17 @@ enum class Tile
 class Tilemap
 {
 private:
-	float tileSizeX = 50;
-	float tileSizeY = 50;
+	float tileSizeX = 64;
+	float tileSizeY = 64;
 	Tile tiles[MAP_WIDTH][MAP_HEIGHT];
 public:
-
 
 	bool isTileTraversable(TileCoord tilePosition)
 	{
 		Tile type = tiles[tilePosition.x][tilePosition.y];
 		if (type == Tile::Floor && tileInBounds(tilePosition)) return true;
 		return false;
-		 
+
 	}
 	size_t GetMapWidth() // get number of columns in the grid
 	{
@@ -58,7 +57,11 @@ public:
 		return tiles[tilePos.x][tilePos.y];
 	}
 
-	//void SetTile(TileCoord tilePos, Tile value);  // set the tile at the specified coordinate in the grid
+	void SetTile(TileCoord tilePos, Tile value)
+	{
+		if (tileInBounds(tilePos))
+			tiles[tilePos.x][tilePos.y] = value;
+	}
 
 	Vector2 GetScreenPosOfTile(TileCoord tilePosition)
 	{
@@ -95,10 +98,15 @@ public:
 	void RandomizeTiles()
 	{
 		for (int x = 0; x < MAP_WIDTH; x++)
-		{ 
+		{
 			for (int y = 0; y < MAP_HEIGHT; y++)
 			{
-				tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
+				std::cout << "TILESPASS " << GetAdjacentTiles({ x,y }).size() << std::endl;
+				if (GetAdjacentTiles({ x,y }).size() < 2)
+				{
+					tiles[x][y] = Tile::Floor;
+				}
+				else tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
 			}
 		}
 	}
@@ -146,7 +154,7 @@ public:
 		}
 		else return false;
 	}
-	void Draw() 
+	void Draw()
 	{
 		for (int x = 0; x < MAP_WIDTH; x++)
 		{
@@ -155,12 +163,13 @@ public:
 				Color color{ 0,0,0,0 };
 				Tile tile = tiles[x][y];
 				Vector2 position = GetScreenPosOfTile({ x,y });
-				
+
 				if (!isTileTraversable({ x,y }))
 				{
 					color = DARKGRAY;
+					DrawRectangleV({ position.x, position.y }, { tileSizeX, tileSizeY }, color);
 				}
-				DrawRectangleV(position, { (float)tileSizeX, (float)tileSizeY }, color );
+				DrawRectangleLinesEx({ position.x, position.y, tileSizeX,tileSizeY }, 1, BLACK);
 			}
 		}
 	}
@@ -172,24 +181,25 @@ public:
 			{
 				TileCoord tile = { x, y };
 				if (isTileTraversable(tile))
-				{			
+				{
 					std::vector<Vector2> adjacent = (GetAdjacentTilesV(tile));
 					Vector2 offSet = { tileSizeX / 2,tileSizeY / 2 };
 					DrawCircleV(GetScreenPosOfTile(tile) + offSet, { tileSizeX / 4 }, LIME);
 
 					for (auto t : adjacent)
 					{
-					 
-						if (tileInBoundsV(t)&&(!(t.x < GetScreenPosOfTile(tile).x) || !(t.x < GetScreenPosOfTile(tile).y)))
+
+						if (tileInBoundsV(t) && (!(t.x < GetScreenPosOfTile(tile).x) || !(t.x < GetScreenPosOfTile(tile).y)))
 						{
 							DrawLineV(t + offSet, GetScreenPosOfTile(tile) + offSet, LIME);
 						}
- 
-				
+
+
 					}
 
 				}
 			}
 		}
 	}
+
 };
