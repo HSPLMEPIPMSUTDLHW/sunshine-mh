@@ -186,7 +186,7 @@ public:
 			drawTile(v.first, linethickness, GREEN, v.second);
 			 			
 		}
-	
+		
 	}
 	void drawSolution()
 	{

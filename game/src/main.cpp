@@ -180,7 +180,7 @@ int main(void)
         {
             SelectedTile = mouseTile;
         }
-        if (player.stepcomplete)
+        if (player.stepcomplete && !traveling)
         {
 
 
@@ -211,6 +211,7 @@ int main(void)
                     path.clear();
                     steps = 0;
                     haspath = false;
+             
                 }
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -220,6 +221,7 @@ int main(void)
                     path.clear();
                     steps = 0;
                     haspath = false;
+                    traveling = true;
                 }
 
             }
@@ -232,10 +234,10 @@ int main(void)
             map.SetTile(mouseTile, Tile::Wall);
 
         }
-        if (IsKeyDown(KEY_Y))
+        if (IsKeyDown(KEY_ENTER) && traveling == false)
         {
             traveling = true;
-
+            steps = 0;
         }
 
         if (IsKeyDown(KEY_G) && map.isTileTraversable(mouseTile))
@@ -262,15 +264,14 @@ int main(void)
             if (pathfinder.IsCompleted())
             {
                 
-                pathfinder.drawCosts();
-                pathfinder.drawSolution();
+
                 if (traveling && player.stepcomplete)
                 {
-                  //  pathfinder.drawSolution();
+                  
                     if (!haspath && (steps < pathfinder.GetSolution().size()))
                     {
-                        std::list<TileCoord> sol = pathfinder.GetSolution();
-                        for (auto p : sol)
+                       // std::list<TileCoord> sol = pathfinder.GetSolution();
+                        for (auto p : pathfinder.GetSolution())
                         {
                             path.push_back(p);
                         }
@@ -294,10 +295,16 @@ int main(void)
                             haspath = false;
                         }
                     }
-             
-
+                    else
+                    {
+                        traveling = false;
+                    }
+                    
                 }
+                pathfinder.drawCosts();
                 pathfinder.drawGoal();
+                pathfinder.drawSolution();
+ 
                // player.Update();
             }
             else
