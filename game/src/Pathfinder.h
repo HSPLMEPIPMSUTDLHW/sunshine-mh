@@ -16,7 +16,10 @@ private:
 	TileCoord startNode;
 	TileCoord goalNode;
 	TileCoord currentNode;
+
+	// Variables for drawing
 	Vector2 offSet;
+	int linethickness = 4;
 public:
 	Pathfinder() {};
 	Pathfinder(Tilemap* levelToNavigate, TileCoord startTile, TileCoord endTile)
@@ -143,29 +146,25 @@ public:
 			if (!IsVisited(c.first))
 			{
 				
-				drawTile(c.first, 6, DARKGRAY, visited[c.second] + 1);
+				drawTile(c.first, linethickness, DARKGRAY, visited[c.second] + 1);
 				
 			}
-		 
-
-			
-		 
 
 		}
 		for (auto v : visited)
 		{
-		drawTile(v.first, 6, GREEN, v.second);
+		drawTile(v.first, linethickness, GREEN, v.second);
 		}
 
-		drawTile(currentNode, 6, BLUE, visited[currentNode]);
+		drawTile(currentNode, linethickness, BLUE, visited[currentNode]);
 
 	}
 	void drawGoal()
-	{
+	{		
+		if (IsSolved()) DrawText(" Complete", map->GetScreenPosOfTile(goalNode).x+ map->GetTileWidth() / 20, map->GetScreenPosOfTile(goalNode).y+ map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
+		else if (IsCompleted()) DrawText(" No \n Solution", map->GetScreenPosOfTile(goalNode).x + map->GetTileWidth() / 20, map->GetScreenPosOfTile(goalNode).y + map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
+		drawTile(goalNode, linethickness, RED);
 		 
-		
-		if (currentNode == goalNode) DrawText("Complete", map->GetScreenPosOfTile(goalNode).x+ map->GetTileWidth() / 20, map->GetScreenPosOfTile(goalNode).y+ map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
-		 drawTile(goalNode, 6, RED);
 	}
 
 	void drawCosts()
@@ -176,7 +175,7 @@ public:
 			DrawLineEx(map->GetScreenPosOfTile(c.first) + offSet, map->GetScreenPosOfTile(c.second) + offSet, offSet.x / 10, LIME);
 			if (!IsVisited(c.first))
 			{			
-				drawTile(c.first, 6, DARKGRAY, GetTotalCostToReach(c.first));
+				drawTile(c.first, linethickness, DARKGRAY, GetTotalCostToReach(c.first));
 			}
 			 			
 
@@ -184,7 +183,7 @@ public:
 		}
 		for (auto v : visited)
 		{
-			drawTile(v.first, 6, GREEN, v.second);
+			drawTile(v.first, linethickness, GREEN, v.second);
 			 			
 		}
 	

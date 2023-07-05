@@ -4,12 +4,8 @@
 #include "TileCoord.h"
 #include <iostream>
 #define MAP_WIDTH 15
-#define MAP_HEIGHT 9
+#define MAP_HEIGHT 10
 
-const TileCoord NORTH = { 0, -1 };
-const TileCoord SOUTH = { 0,  1 };
-const TileCoord EAST = { 1,  0 };
-const TileCoord WEST = { -1,  0 };
 
 enum class Tile
 {
@@ -25,6 +21,10 @@ private:
 	float tileSizeY = 64;
 	Tile tiles[MAP_WIDTH][MAP_HEIGHT];
 public:
+	const TileCoord NORTH = { 0, -1 };
+	const TileCoord SOUTH = { 0,  1 };
+	const TileCoord EAST = { 1,  0 };
+	const TileCoord WEST = { -1,  0 };
 
 	bool isTileTraversable(TileCoord tilePosition)
 	{
@@ -68,6 +68,11 @@ public:
 		return{ (float)tilePosition.x * tileSizeX, (float)tilePosition.y * tileSizeY };
 
 	}
+	Vector2 GetScreenPosOfTileV(Vector2 tilePosition)
+	{
+		return{ (float)tilePosition.x * tileSizeX, (float)tilePosition.y * tileSizeY };
+
+	}
 	TileCoord GetTileAtScreenPos(Vector2 tilePosition)
 	{
 		return{ tilePosition.x / tileSizeX, tilePosition.y / tileSizeY };
@@ -106,7 +111,7 @@ public:
 				{
 					tiles[x][y] = Tile::Floor;
 				}
-				else tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
+				else tiles[x][y] = (Tile)(rand() % (int)(Tile::Wall));
 			}
 		}
 	}
