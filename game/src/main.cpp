@@ -111,6 +111,10 @@ int main(void)
     int steps = 0;
     bool haspath = false;
     bool traveling = false;
+    rlImGuiSetup(true);
+ 
+
+    static bool debugMode = false;
     //TileCoord mouseTile;
     TileCoord SelectedTile;
     while (!WindowShouldClose())
@@ -146,7 +150,7 @@ int main(void)
 
             if (map.tileInBounds(mouseTile))
             {
-                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && debugMode)
                 {
 
                     pathfinder = Pathfinder(&map, monster.pos, TileCoord(SelectedTile));
@@ -184,7 +188,7 @@ int main(void)
             map.SetTile(mouseTile, Tile::Floor);
 
         }
-        if (IsKeyDown(KEY_ENTER) && traveling == false)
+        if (IsKeyDown(KEY_ENTER) && !traveling && debugMode)
         {
             traveling = true;
             steps = 0;
@@ -195,6 +199,17 @@ int main(void)
             monster.setPos(mouseTile);
 
         }
+        if (IsKeyPressed(KEY_GRAVE)) useGUI = !useGUI;
+        if (useGUI)
+        {
+            rlImGuiBegin();
+            ImGui::SetNextWindowPos(ImVec2(1000, 500), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(200, 500), ImGuiCond_FirstUseEver);
+
+            ImGui::Checkbox("Debug mode", &debugMode);
+            rlImGuiEnd();
+        }
+
  
         if (pathfinder.map != nullptr)
         {
@@ -220,7 +235,7 @@ int main(void)
                   
                     if (!haspath && (steps < pathfinder.GetSolution().size()))
                     {
-                       // std::list<TileCoord> sol = pathfinder.GetSolution();
+ 
                         for (auto p : pathfinder.GetSolution())
                         {
                             path.push_back(p);
@@ -251,17 +266,22 @@ int main(void)
                     }
                     
                 }
-                pathfinder.drawCosts();
-                pathfinder.drawGoal();
-                pathfinder.drawSolution();
+                if (debugMode)
+                {
+                    pathfinder.drawCosts();
+                   
+                    pathfinder.drawSolution();
+                }
+             
  
-               // monster.Update();
+        
             }
             else
             {
                 pathfinder.drawCurrent();
-                pathfinder.drawGoal();
+                
             }
+
         }
 
         monster.Update();
