@@ -19,7 +19,7 @@ Pathfinder pathfinder;
 
 using namespace std;
 
-struct tileAgent
+struct tileCharacter
 {
     TileCoord pos;
     Vector2 posV;
@@ -29,7 +29,7 @@ struct tileAgent
     TileCoord step;
     bool stepcomplete = true;
 
-    tileAgent(Vector2 start, Color c)
+    tileCharacter(Vector2 start, Color c)
     {
         pos = start;
         posV = map.GetScreenPosOfTile(start);
@@ -105,7 +105,7 @@ int main(void)
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sunshine");
     bool useGUI = false;
     SetTargetFPS(60);
-    tileAgent player({ 0,0 },RED);
+    tileCharacter monster({ 0,0 },RED);
     vector<TileCoord> spaceupdate;
     std::vector<TileCoord> path;
     int steps = 0;
@@ -122,26 +122,26 @@ int main(void)
         {
             SelectedTile = mouseTile;
         }
-        if (player.stepcomplete && !traveling)
+        if (monster.stepcomplete && !traveling)
         {
 
 
-        if (IsKeyPressed(KEY_W) && (map.isTileTraversable({ player.pos.x,player.pos.y - 1 })))
+        if (IsKeyPressed(KEY_W) && (map.isTileTraversable({ monster.pos.x,monster.pos.y - 1 })))
         {
-            player.setStep(player.pos + map.NORTH);
-      //      player.step.y = player.pos.y -=1;
+            monster.setStep(monster.pos + map.NORTH);
+      //      monster.step.y = monster.pos.y -=1;
         }
-        else if (IsKeyPressed(KEY_S) && (map.isTileTraversable({ player.pos.x,player.pos.y + 1 })))
+        else if (IsKeyPressed(KEY_S) && (map.isTileTraversable({ monster.pos.x,monster.pos.y + 1 })))
         {
-            player.setStep(player.pos + map.SOUTH);
+            monster.setStep(monster.pos + map.SOUTH);
         }
-        else if (IsKeyPressed(KEY_A) && (map.isTileTraversable({ player.pos.x - 1,player.pos.y })))
+        else if (IsKeyPressed(KEY_A) && (map.isTileTraversable({ monster.pos.x - 1,monster.pos.y })))
         {
-            player.setStep(player.pos + map.WEST);
+            monster.setStep(monster.pos + map.WEST);
         }
-        else if (IsKeyPressed(KEY_D) && (map.isTileTraversable({ player.pos.x + 1,player.pos.y })))
+        else if (IsKeyPressed(KEY_D) && (map.isTileTraversable({ monster.pos.x + 1,monster.pos.y })))
         {
-            player.setStep(player.pos + map.EAST);
+            monster.setStep(monster.pos + map.EAST);
         }
 
             if (map.tileInBounds(mouseTile))
@@ -149,7 +149,7 @@ int main(void)
                 if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
                 {
 
-                    pathfinder = Pathfinder(&map, player.pos, TileCoord(SelectedTile));
+                    pathfinder = Pathfinder(&map, monster.pos, TileCoord(SelectedTile));
                     path.clear();
                     steps = 0;
                     haspath = false;
@@ -158,7 +158,7 @@ int main(void)
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 {
-                    pathfinder = Pathfinder(&map, player.pos, TileCoord(SelectedTile));
+                    pathfinder = Pathfinder(&map, monster.pos, TileCoord(SelectedTile));
                     pathfinder.SolvePath();
                     path.clear();
                     steps = 0;
@@ -192,7 +192,7 @@ int main(void)
 
         if (IsKeyDown(KEY_G) && map.isTileTraversable(mouseTile))
         {
-            player.setPos(mouseTile);
+            monster.setPos(mouseTile);
 
         }
  
@@ -215,7 +215,7 @@ int main(void)
             {
                 
 
-                if (traveling && player.stepcomplete)
+                if (traveling && monster.stepcomplete)
                 {
                   
                     if (!haspath && (steps < pathfinder.GetSolution().size()))
@@ -233,12 +233,12 @@ int main(void)
                       //  cout << "STEPS " << steps << endl;
                         if (map.isTileTraversable(path[steps]))
                         {
-                            player.step = path[steps];
+                            monster.step = path[steps];
                             steps++;
                         }
                         else
                         {
-                            pathfinder = Pathfinder(&map, player.pos, TileCoord(SelectedTile));
+                            pathfinder = Pathfinder(&map, monster.pos, TileCoord(SelectedTile));
                             pathfinder.SolvePath();
                             path.clear();
                             steps = 0;
@@ -255,7 +255,7 @@ int main(void)
                 pathfinder.drawGoal();
                 pathfinder.drawSolution();
  
-               // player.Update();
+               // monster.Update();
             }
             else
             {
@@ -264,13 +264,13 @@ int main(void)
             }
         }
 
-        player.Update();
+        monster.Update();
         map.Draw();
  
  
 
   
-        player.Draw();
+        monster.Draw();
 
         EndDrawing(); 
     }
