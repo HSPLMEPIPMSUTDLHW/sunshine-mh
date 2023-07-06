@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "TileCoord.h"
 #include <iostream>
+#include <fstream>
 #define MAP_WIDTH 15
 #define MAP_HEIGHT 10
 
@@ -133,8 +134,20 @@ public:
 			}
 		}
 	}
-	void wallBreaker()
+
+	void loadTiles()
 	{
+		std::ifstream file;
+		file.open("TileData.txt");
+		TileCoord c;
+		while (file)
+		{
+			file >> c.x >> c.y;
+			std::cout << c.x << " " << c.y << std::endl;
+			SetTile(c, Tile::Floor);
+		}
+		//file >> c;
+		std::cout << c.x << " " << c.y << std::endl;
 
 	}
 

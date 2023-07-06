@@ -18,66 +18,6 @@ Tilemap map;
 Pathfinder pathfinder;
 
 using namespace std;
-/*
-struct tileAgent
-{
-    TileCoord pos;
-    Vector2 posV;
-    Color color;
-    float height;
-    TileCoord step;
-
-    tileAgent(Vector2 start, Color c)
-    {
-        pos = start;
-        posV = start;
-        color = c;
-        height = map.GetTileWidth();
-
-    }
-
-    void moveToStep()
-    {
-        TileCoord s = pos - step;
-        Vector2 toMove = { (float)s.x,(float)s.y };
-        Vector2 v = { toMove.x / 10, toMove.y / 10 };
-        posV = posV - v;
-    }
-    void SetStep(TileCoord s)
-    {
-        posV = { (float)pos.x,(float)pos.y };
-        step = map.GetScreenPosOfTile(s);
-    }
-    void setPos(TileCoord p)
-    {
-
-        pos  =  p;
-        step = p;
-        posV = { (float)pos.x,(float)pos.y };
-    }
-    bool finishedStep()
-    {
-     //   cout << "POSV: " << posV.x << "|" << posV.y << " STEP: " << (float)step.x<<  "|" << (float)step.y << endl;
-        Vector2 length = { posV.x - (float)step.x, posV.y = (float)step.y } ;
-        cout << "LENGTH" << Length(length) << endl;
-        return ((Length(length) >= 1)|| ((pos.x = posV.x) && (pos.y = posV.y)));
-    }
-    void Update()
-    {
-        if (!finishedStep()) moveToStep();
-        else
-        {
-            cout << "TRUE!!" << endl;
-            (pos = posV);
-        }
-
-    }
-    void Draw()
-    {
-        DrawRectangleV(map.GetScreenPosOfTileV(posV), { height, height }, RED);
-    }
-
-};*/
 
 struct tileAgent
 {
@@ -154,67 +94,14 @@ struct tileAgent
 
 };
 
-void wallBreaker()
-{
-    vector<TileCoord> tiles = map.GetAllTraversableTiles();
-    bool broken = false;
-    TileCoord theTile = tiles[0];
-    TileCoord theOtherTile = { 14,9 };
-    int floors = 0;
-    int pos = 0;
-    while(!broken)
-    {
-        pathfinder = Pathfinder(&map, theTile, theOtherTile);
-       // pathfinder.SolvePath();
-        while (!pathfinder.IsCompleted())
-        {
-            pathfinder.ProcessNextIterationFunctional();
-            floors++;
-        }
-        cout << "FLOOR: "<< floors << " | " << tiles.size() << endl;
-        if (floors >= tiles.size())
-        {
-            cout << "ALL FLOORS TOUCHED" << endl;
-            broken = true;
-        }
-        else 
-        { 
-            cout << "FUck" << endl;
-            cout << "SEARCH" << endl;
-            broken = true;
-            bool search = false;
-            vector<TileCoord> adjacenttiles;
-          
-            cout << "SAERCH" << endl;
-            for (TileCoord t : tiles)
-            {
-                cout << "THE " <<map.GetAdjacentWalls(t).size() << endl;
  
-                if (map.GetAdjacentWalls(t).size() > 0)
-                    adjacenttiles.push_back(t);
-            }
-            cout << "TIME " << endl;
-            pos = rand() % adjacenttiles.size();
-            vector<TileCoord> sex = map.GetAdjacentWalls(adjacenttiles[pos]);
-            int d = map.GetAdjacentWalls(adjacenttiles[pos]).size();
-            int destroy = rand() % (1+map.GetAdjacentWalls(adjacenttiles[pos]).size());
-            map.SetTile(map.GetAdjacentWalls(adjacenttiles[pos])[destroy], Tile::Floor);
-        }
-
-        }
-     
-    
-  //  pathfinder = Pathfinder(&map, player.pos, TileCoord(SelectedTile));
- //   pathfinder.SolvePath();
-  //  path.clear();
-}
 
 
 int main(void)
 {
     srand(time(NULL));
-    map.clearTiles(Tile::Floor);
-  //  map.RandomizeTiles();
+    map.clearTiles(Tile::Wall);
+    map.loadTiles();
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sunshine");
     bool useGUI = false;
     SetTargetFPS(60);
@@ -283,10 +170,18 @@ int main(void)
 
         }
         
- 
+        if (IsKeyPressed(KEY_O))
+        {
+            map.loadTiles();
+        }
         if (IsKeyDown(KEY_R))
         {
             map.SetTile(mouseTile, Tile::Wall);
+
+        }
+        if (IsKeyDown(KEY_T))
+        {
+            map.SetTile(mouseTile, Tile::Floor);
 
         }
         if (IsKeyDown(KEY_ENTER) && traveling == false)
@@ -300,11 +195,7 @@ int main(void)
             player.setPos(mouseTile);
 
         }
-        if (IsKeyPressed(KEY_U))
-        {
-            wallBreaker();
-
-        }
+ 
         if (pathfinder.map != nullptr)
         {
             if (IsKeyPressed(KEY_SPACE))
