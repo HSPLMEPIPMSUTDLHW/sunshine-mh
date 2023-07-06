@@ -100,20 +100,42 @@ public:
 		return traversable;
 	}
 
+	void clearTiles(Tile type)
+	{
+		for (int x = 0; x < MAP_WIDTH; x++)
+		{
+			for (int y = 0; y < MAP_HEIGHT; y++)
+			{
+				tiles[x][y] = type;
+			}
+		}
+	}
+
+
 	void RandomizeTiles()
 	{
 		for (int x = 0; x < MAP_WIDTH; x++)
 		{
 			for (int y = 0; y < MAP_HEIGHT; y++)
 			{
+				
 				std::cout << "TILESPASS " << GetAdjacentTiles({ x,y }).size() << std::endl;
-				if (GetAdjacentTiles({ x,y }).size() < 2)
+				if (GetAdjacentTiles({ x,y }).size() < 1)
 				{
 					tiles[x][y] = Tile::Floor;
 				}
-				else tiles[x][y] = (Tile)(rand() % (int)(Tile::Wall));
+				else if (GetAdjacentTiles({ x,y }).size() > 3)
+				{
+					tiles[x][y] = Tile::Wall;
+				}
+				else tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
+				tiles[x][y] = (Tile)(rand() % (int)(Tile::Count));
 			}
 		}
+	}
+	void wallBreaker()
+	{
+
 	}
 
 	std::vector<TileCoord> GetAdjacentTiles(TileCoord tileposition)//returns the adjacent tiles as a tilcoord
@@ -127,6 +149,19 @@ public:
 		if (isTileTraversable(S)) adjacentTiles.push_back(S);
 		if (isTileTraversable(E)) adjacentTiles.push_back(E);
 		if (isTileTraversable(W)) adjacentTiles.push_back(W);
+		return adjacentTiles;
+	}
+	std::vector<TileCoord> GetAdjacentWalls(TileCoord tileposition)//returns the adjacent tiles as a tilcoord
+	{
+		std::vector<TileCoord> adjacentTiles;
+		TileCoord N = tileposition + NORTH;
+		TileCoord S = tileposition + SOUTH;
+		TileCoord E = tileposition + EAST;
+		TileCoord W = tileposition + WEST;
+		if (!(isTileTraversable(N)) && tileInBounds(N)) adjacentTiles.push_back(GetScreenPosOfTile(tileposition + NORTH));
+		if (!(isTileTraversable(S)) && tileInBounds(S)) adjacentTiles.push_back(GetScreenPosOfTile(tileposition + SOUTH));
+		if (!(isTileTraversable(E)) && tileInBounds(E)) adjacentTiles.push_back(GetScreenPosOfTile(tileposition + EAST));
+		if (!(isTileTraversable(W)) && tileInBounds(W)) adjacentTiles.push_back(GetScreenPosOfTile(tileposition + WEST));
 		return adjacentTiles;
 	}
 	std::vector<Vector2> GetAdjacentTilesV(TileCoord tileposition)//returns the adjacent tiles as a vector2

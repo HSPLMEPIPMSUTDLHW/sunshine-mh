@@ -100,25 +100,24 @@ struct tileAgent
     }
     bool finishedStep()
     {
-        cout << "POST: " << posV.x << "|" << posV.y << " STEP: " << map.GetScreenPosOfTile(step).x << "|" << map.GetScreenPosOfTile(step).y << endl;
+         
         return (posV == map.GetScreenPosOfTile(step));
     }
     void Update()
     {
         if (!finishedStep())
         {
-            cout << "FALSE!!" << endl;
+           
            
             movingtoStep();
             stepcomplete = false;
-            cout << "POSV: " << posV.x << "|" << posV.y << " STEP: " << (float)step.x << "|" << (float)step.y << endl;
+            
         }
         else
         {
             pos = map.GetTileAtScreenPos(posV);
             stepcomplete = true;
-            cout << "TRUE!!" << endl;
-            cout << "POSV: " << posV.x << "|" << posV.y << " STEP: " << (float)step.x << "|" << (float)step.y << endl;
+ 
         }
 
     }
@@ -155,11 +154,67 @@ struct tileAgent
 
 };
 
+void wallBreaker()
+{
+    vector<TileCoord> tiles = map.GetAllTraversableTiles();
+    bool broken = false;
+    TileCoord theTile = tiles[0];
+    TileCoord theOtherTile = { 14,9 };
+    int floors = 0;
+    int pos = 0;
+    while(!broken)
+    {
+        pathfinder = Pathfinder(&map, theTile, theOtherTile);
+       // pathfinder.SolvePath();
+        while (!pathfinder.IsCompleted())
+        {
+            pathfinder.ProcessNextIterationFunctional();
+            floors++;
+        }
+        cout << "FLOOR: "<< floors << " | " << tiles.size() << endl;
+        if (floors >= tiles.size())
+        {
+            cout << "ALL FLOORS TOUCHED" << endl;
+            broken = true;
+        }
+        else 
+        { 
+            cout << "FUck" << endl;
+            cout << "SEARCH" << endl;
+            broken = true;
+            bool search = false;
+            vector<TileCoord> adjacenttiles;
+          
+            cout << "SAERCH" << endl;
+            for (TileCoord t : tiles)
+            {
+                cout << "THE " <<map.GetAdjacentWalls(t).size() << endl;
+ 
+                if (map.GetAdjacentWalls(t).size() > 0)
+                    adjacenttiles.push_back(t);
+            }
+            cout << "TIME " << endl;
+            pos = rand() % adjacenttiles.size();
+            vector<TileCoord> sex = map.GetAdjacentWalls(adjacenttiles[pos]);
+            int d = map.GetAdjacentWalls(adjacenttiles[pos]).size();
+            int destroy = rand() % (1+map.GetAdjacentWalls(adjacenttiles[pos]).size());
+            map.SetTile(map.GetAdjacentWalls(adjacenttiles[pos])[destroy], Tile::Floor);
+        }
+
+        }
+     
+    
+  //  pathfinder = Pathfinder(&map, player.pos, TileCoord(SelectedTile));
+ //   pathfinder.SolvePath();
+  //  path.clear();
+}
+
 
 int main(void)
 {
     srand(time(NULL));
-    map.RandomizeTiles();
+    map.clearTiles(Tile::Floor);
+  //  map.RandomizeTiles();
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sunshine");
     bool useGUI = false;
     SetTargetFPS(60);
@@ -245,7 +300,11 @@ int main(void)
             player.setPos(mouseTile);
 
         }
-        
+        if (IsKeyPressed(KEY_U))
+        {
+            wallBreaker();
+
+        }
         if (pathfinder.map != nullptr)
         {
             if (IsKeyPressed(KEY_SPACE))

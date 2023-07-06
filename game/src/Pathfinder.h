@@ -159,11 +159,17 @@ public:
 		drawTile(currentNode, linethickness, BLUE, visited[currentNode]);
 
 	}
-	void drawGoal()
-	{		
+	void drawGoal() //also draws the start
+	{	
+
 		if (IsSolved()) DrawText(" Complete", map->GetScreenPosOfTile(goalNode).x+ map->GetTileWidth() / 20, map->GetScreenPosOfTile(goalNode).y+ map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
 		else if (IsCompleted()) DrawText(" No \n Solution", map->GetScreenPosOfTile(goalNode).x + map->GetTileWidth() / 20, map->GetScreenPosOfTile(goalNode).y + map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
 		drawTile(goalNode, linethickness, RED);
+		if (!(goalNode == startNode))
+		{
+			drawTile(startNode, linethickness, LIME);
+			DrawText(" START", map->GetScreenPosOfTile(startNode).x + map->GetTileWidth() / 20, map->GetScreenPosOfTile(startNode).y + map->GetTileWidth() / 4, map->GetTileWidth() / 5, BLACK);
+		}
 		 
 	}
 
@@ -193,7 +199,7 @@ public:
 		TileCoord prev = startNode;
 		for (auto p : GetSolution())
 		{	 
-			DrawLineEx(map->GetScreenPosOfTile(p) + offSet, map->GetScreenPosOfTile(prev) + offSet, offSet.x / 5, DARKBLUE);
+			DrawLineEx(map->GetScreenPosOfTile(p) + offSet, map->GetScreenPosOfTile(prev) + offSet, offSet.x / 3, DARKBLUE);
 			prev = p;
 			
 		}
