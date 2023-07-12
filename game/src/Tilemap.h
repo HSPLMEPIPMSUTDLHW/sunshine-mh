@@ -148,7 +148,18 @@ public:
 		}
 		//file >> c;
 		std::cout << c.x << " " << c.y << std::endl;
-
+		file.close();
+	}
+	void saveTiles()
+	{
+		std::ofstream file;
+		file.open("TileData.txt");
+	 
+		for (TileCoord t : GetAllTraversableTiles())
+		{
+			file << t.x << " " << t.y << std::endl;
+		}	 
+		file.close();
 	}
 
 	std::vector<TileCoord> GetAdjacentTiles(TileCoord tileposition)//returns the adjacent tiles as a tilcoord

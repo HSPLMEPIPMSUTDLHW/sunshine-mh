@@ -78,7 +78,7 @@ struct tileCharacter
         s.x = s.x * (map.GetTileWidth()/ increment);
         s.y = s.y * (map.GetTileHeight()/ increment);
         posV = posV - s.toVec2();
-       // cout << "POSV: " << posV.x << "|" << posV.y << " STEP: " << s.x << "|" << s.y << endl;
+      
 
     }
     void setPos(TileCoord p)
@@ -107,7 +107,7 @@ int main(void)
     SetTargetFPS(60);
     tileCharacter monster({ 0,0 },RED);
     vector<TileCoord> spaceupdate;
-    std::vector<TileCoord> path;
+    vector<TileCoord> path;
     int steps = 0;
     bool haspath = false;
     bool traveling = false;
@@ -115,6 +115,7 @@ int main(void)
  
 
     static bool debugMode = false;
+    static string fileName = "TileDataa.txt";
     //TileCoord mouseTile;
     TileCoord SelectedTile;
     while (!WindowShouldClose())
@@ -133,7 +134,6 @@ int main(void)
         if (IsKeyPressed(KEY_W) && (map.isTileTraversable({ monster.pos.x,monster.pos.y - 1 })))
         {
             monster.setStep(monster.pos + map.NORTH);
-      //      monster.step.y = monster.pos.y -=1;
         }
         else if (IsKeyPressed(KEY_S) && (map.isTileTraversable({ monster.pos.x,monster.pos.y + 1 })))
         {
@@ -174,20 +174,25 @@ int main(void)
 
         }
         
-        if (IsKeyPressed(KEY_O))
+        if (debugMode)
         {
-            map.loadTiles();
-        }
-        if (IsKeyDown(KEY_R))
-        {
-            map.SetTile(mouseTile, Tile::Wall);
+            if (IsKeyPressed(KEY_O))
+            {
+                map.loadTiles();
+            }
 
-        }
-        if (IsKeyDown(KEY_T))
-        {
-            map.SetTile(mouseTile, Tile::Floor);
+            if (IsKeyDown(KEY_R))
+            {
+                map.SetTile(mouseTile, Tile::Wall);
 
+            }
+            if (IsKeyDown(KEY_T))
+            {
+                map.SetTile(mouseTile, Tile::Floor);
+
+            }
         }
+
         if (IsKeyDown(KEY_ENTER) && !traveling && debugMode)
         {
             traveling = true;
@@ -205,7 +210,6 @@ int main(void)
             rlImGuiBegin();
             ImGui::SetNextWindowPos(ImVec2(1000, 500), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(200, 500), ImGuiCond_FirstUseEver);
-
             ImGui::Checkbox("Debug mode", &debugMode);
             rlImGuiEnd();
         }
@@ -216,7 +220,7 @@ int main(void)
             if (IsKeyPressed(KEY_SPACE))
             {
                 pathfinder.ProcessNextIterationFunctional();
-            //    pathfinder.drawCurrent();
+           
                 spaceupdate.push_back(pathfinder.getCurrent());
     
             }
@@ -245,7 +249,7 @@ int main(void)
                     }
                     if (steps < pathfinder.GetSolution().size())
                     {
-                      //  cout << "STEPS " << steps << endl;
+       
                         if (map.isTileTraversable(path[steps]))
                         {
                             monster.step = path[steps];
